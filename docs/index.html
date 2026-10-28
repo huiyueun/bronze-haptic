@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f1eee7"><title>청동방울 · 3D</title><link rel="stylesheet" href="style.css"></head>
+<body><main id="experience" aria-label="청동방울 소리와 진동 체험">
+<nav id="types" aria-label="유물 종류"></nav>
+<section id="stage" aria-label="3D 유물. 가로로 드래그하여 좌우 회전" tabindex="0"><div id="webgl"></div><button id="asset-loading">불러오는 중…</button></section>
+<div class="tools"><button id="fullscreen" aria-label="전체화면" title="전체화면">⛶</button></div>
+<dialog id="activation" aria-labelledby="activation-title"><h2 id="activation-title">흔들어 느끼는 청동방울</h2><p>소리와 동작 센서를 켜고<br>휴대폰을 가볍게 흔들어 보세요.</p><p class="activation-hint">권한 요청이 나오면 허용해 주세요.<br>유물은 가로로 드래그해 돌려볼 수 있어요.</p><button id="start">소리·동작 센서 활성화</button><p id="activation-status" role="status" aria-live="polite"></p></dialog>
+<div class="signal" aria-label="소리와 진동 패턴"><canvas id="pattern" aria-label="움직임에 반응하는 소리와 진동 패턴"></canvas></div>
+<p id="status" role="status" aria-live="polite" hidden></p>
+<button id="about" aria-label="출처와 체험 안내" title="출처와 체험 안내">ⓘ</button>
+<dialog id="info"><button id="close-info" aria-label="안내 닫기">×</button><h2>청동방울</h2><p>처음 팝업에서 소리와 동작 센서를 켠 뒤 휴대폰을 흔들어 주세요. 흔드는 속도와 기울기에 따라 소리·진동 패턴이 변합니다. 상단 메뉴로 종류를 바꿀 수 있습니다.</p><p>화면을 가로로 드래그하면 유물이 좌우로만 회전합니다. 진동은 지원되는 Android 브라우저에서 동작하며, iPhone 등 미지원 환경에서는 소리와 패턴으로 반응합니다.</p><p>국가유산청 ‘전 덕산 청동방울 일괄 전체’ PLY 스캔 원본. 팔주령 1점·쌍두령 2점·조합식쌍두령 1점·간두령 2점을 종류별로 분리하고 웹용으로 경량화했습니다. 원본 정점 색상을 사용하며 별도 이미지 텍스처는 없습니다. 공공누리 제1유형 · 출처표시.</p><p>소리는 한국저작권위원회가 제작한 실제 방울 녹음 음원을 사용합니다. <a href="https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265910&menuNo=200020" target="_blank" rel="noopener">국악기_방울3</a> · <a href="https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265912&menuNo=200020" target="_blank" rel="noopener">국악기_방울5</a> · <a href="https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265908&menuNo=200020" target="_blank" rel="noopener">국악기_방울1</a> · <a href="https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265911&menuNo=200020" target="_blank" rel="noopener">국악기_방울4</a>. 공유마당 · <a href="https://creativecommons.org/licenses/by/4.0/deed.ko" target="_blank" rel="noopener">CC BY 4.0</a>. 구간 발췌·모노 변환·페이드와 종류별 피치·EQ·길이 조정을 적용했습니다. 팔주령은 밝고 짧게, 쌍두령은 단단하게, 조합식쌍두령은 낮고 풍성하게, 간두령은 묵직하고 길게 구성했습니다. 이 유물 자체를 녹음하거나 고증한 소리는 아닙니다.</p><a id="asset-source" target="_blank" rel="noopener">3D 원본 · 국가유산청 ↗</a></dialog>
+</main><script src="app.js"></script></body></html>

@@ -1,0 +1,114 @@
+[
+  {
+    "type": "paljuryeong",
+    "title": "국악기_방울3",
+    "author": "한국저작권위원회",
+    "source": "https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265910&menuNo=200020",
+    "license": [
+      "https://creativecommons.org/licenses/by/4.0/deed.ko"
+    ],
+    "sha256": "66f8b7030be4433b364d5b37871cb54ca9d2037bdab9b3f677b36c92d744d497",
+    "starts": [
+      2.12,
+      4.32,
+      7.32
+    ],
+    "duration": 0.41052631578947374,
+    "timbre": {
+      "rate": 1.14,
+      "tail": 0.72,
+      "eq": "highpass=f=800,equalizer=f=4800:t=q:w=0.8:g=3",
+      "label": "밝고 짧은 잔울림"
+    },
+    "changes": "구간 발췌·모노 변환·종류별 피치/길이/EQ·페이드·피크 제한. 체험용 음색 디자인, 유물 소리 복원 아님. 재생 시 기울기에 따라 추가 ±4% 속도 변화.",
+    "files": [
+      "paljuryeong-0.wav",
+      "paljuryeong-1.wav",
+      "paljuryeong-2.wav"
+    ]
+  },
+  {
+    "type": "ssangduryeong",
+    "title": "국악기_방울5",
+    "author": "한국저작권위원회",
+    "source": "https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265912&menuNo=200020",
+    "license": [
+      "https://creativecommons.org/licenses/by/4.0/deed.ko"
+    ],
+    "sha256": "d10f28165a3741b4e1be0f7a62783af3ad0f88177c82d8eec8c88493c12e7f7f",
+    "starts": [
+      0.82,
+      1.52,
+      2.57
+    ],
+    "duration": 0.39215686274509803,
+    "timbre": {
+      "rate": 1.02,
+      "tail": 0.8,
+      "eq": "highpass=f=350,equalizer=f=2200:t=q:w=1:g=3",
+      "label": "단단하고 선명한 타격"
+    },
+    "changes": "구간 발췌·모노 변환·종류별 피치/길이/EQ·페이드·피크 제한. 체험용 음색 디자인, 유물 소리 복원 아님. 재생 시 기울기에 따라 추가 ±4% 속도 변화.",
+    "files": [
+      "ssangduryeong-0.wav",
+      "ssangduryeong-1.wav",
+      "ssangduryeong-2.wav"
+    ]
+  },
+  {
+    "type": "johap-ssangduryeong",
+    "title": "국악기_방울1",
+    "author": "한국저작권위원회",
+    "source": "https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265908&menuNo=200020",
+    "license": [
+      "https://creativecommons.org/licenses/by/4.0/deed.ko"
+    ],
+    "sha256": "389078f8d018a2ffbbf06f5e75aeb9f81bfb0aa1a3ecb812e016f1e19b6b8910",
+    "starts": [
+      0.72,
+      1.77,
+      2.07
+    ],
+    "duration": 0.7303370786516854,
+    "timbre": {
+      "rate": 0.89,
+      "tail": 1,
+      "eq": "highpass=f=180,equalizer=f=950:t=q:w=0.7:g=3,lowpass=f=6500",
+      "label": "낮고 풍성한 울림"
+    },
+    "changes": "구간 발췌·모노 변환·종류별 피치/길이/EQ·페이드·피크 제한. 체험용 음색 디자인, 유물 소리 복원 아님. 재생 시 기울기에 따라 추가 ±4% 속도 변화.",
+    "files": [
+      "johap-ssangduryeong-0.wav",
+      "johap-ssangduryeong-1.wav",
+      "johap-ssangduryeong-2.wav"
+    ]
+  },
+  {
+    "type": "ganduryeong",
+    "title": "국악기_방울4",
+    "author": "한국저작권위원회",
+    "source": "https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13265911&menuNo=200020",
+    "license": [
+      "https://creativecommons.org/licenses/by/4.0/deed.ko"
+    ],
+    "sha256": "6ef51224faa70bb7846c751f5a2580c74c2f3fdec4df0c847f7b2c8ac65bc6f2",
+    "starts": [
+      1.62,
+      2.32,
+      2.77
+    ],
+    "duration": 0.8333333333333334,
+    "timbre": {
+      "rate": 0.78,
+      "tail": 1,
+      "eq": "highpass=f=120,equalizer=f=650:t=q:w=0.7:g=4,lowpass=f=4200",
+      "label": "묵직하고 긴 울림"
+    },
+    "changes": "구간 발췌·모노 변환·종류별 피치/길이/EQ·페이드·피크 제한. 체험용 음색 디자인, 유물 소리 복원 아님. 재생 시 기울기에 따라 추가 ±4% 속도 변화.",
+    "files": [
+      "ganduryeong-0.wav",
+      "ganduryeong-1.wav",
+      "ganduryeong-2.wav"
+    ]
+  }
+]

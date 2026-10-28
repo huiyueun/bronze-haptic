@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+assets-original/
+*.tar.gz
+.env
+.env.*

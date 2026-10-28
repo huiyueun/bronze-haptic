@@ -1,0 +1,15 @@
+{
+  "name": "팔주령",
+  "objects": 1,
+  "originalTriangles": 80872,
+  "triangles": 20216,
+  "sourceFilename": "국보255_전_덕산_청동방울_일괄_전체_서비스_3D모델링.ply",
+  "sourceSha256": "26e04be5d44317a2e9167b8d8e303761d7a7a6ef17623764b6ffdb25d738b9eb",
+  "source": "https://digital.khs.go.kr/record/recordDetail3D.do?ichDataUid=13903604992362301744&bizId=BIZ200400001214",
+  "identificationSource": "https://digital.khs.go.kr/heri/heriDetail.do?ctptNo=1111102550000&ctptUid=13903520028913000070",
+  "provider": "국가유산청",
+  "license": "공공누리 제1유형 · 출처표시",
+  "color": "원본 PLY RGB 정점 색상 보존 (sRGB → linear). 별도 이미지 텍스처 없음.",
+  "changes": "연결된 유물 단위로 분리, 오차 한도 0.003 내 목표 25% 면 경량화, 법선 계산, meshopt 압축. 간두령 한 쌍은 표시 간격만 조정. 가상 문양·텍스처 추가 없음.",
+  "bytes": 225680
+}
