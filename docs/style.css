@@ -57,3 +57,16 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 @media(max-width:650px){#experience{--rail:118px}#top-nav{padding:8px;gap:12px;right:max(8px,env(safe-area-inset-right));top:12px}#types button{font-size:.875rem;padding:10px 6px 10px 12px;min-height:48px}#feel-entry,#fullscreen{font-size:.875rem;padding:10px 6px}#stage{top:16px;bottom:130px;left:0;right:calc(var(--rail) + 20px + env(safe-area-inset-right))}.viewer-tools{padding-top:12px}#feel-panel{left:8px;width:calc(100% - var(--rail) - 28px - env(safe-area-inset-right))}}
 @media(max-width:359px){#top-nav{flex-wrap:nowrap}#types{flex-basis:auto;height:auto}}
 @media(max-height:480px){#top-nav{top:8px;max-height:calc(100svh - 16px)}#stage{top:12px;bottom:78px}}
+
+/* Readable Korean typography, including narrow screens. */
+:root{font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',system-ui,sans-serif;font-size:100%;line-height:1.6}
+#types button,#feel-entry,#fullscreen,#feel-exit,#feel-without-sensors,#enable-shake,#asset-loading,#status,#feel-status,#activation #activation-status{font-size:1rem}
+#activation h2,dialog h2{font-size:1.5rem;line-height:1.5}
+#info{max-width:560px;padding:28px;overflow-wrap:anywhere}
+#info h2{margin:0 0 24px}
+.credits{margin:0;line-height:1.7;font-size:1.25rem}
+.credits dt{font-weight:700;margin:24px 0 6px;color:var(--ink)}
+.credits dt:first-child{margin-top:0}
+.credits dd{margin:0;color:var(--ink)}
+.credits dd span{font-size:1.125rem;color:var(--muted)}
+@media(max-width:650px){#experience{--rail:138px}#info{padding:24px}#types button,#feel-entry,#fullscreen,#feel-status{font-size:1rem}#types button{overflow-wrap:normal;word-break:keep-all}}
