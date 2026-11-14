@@ -1,0 +1,57 @@
+import * as THREE from 'three';
+import {DOCENT} from './tactile-data.mjs';
+import {createTactileSound} from './tactile-sound.js';
+
+// Surface anchors are fitted once to the real mesh, rather than screen coordinates.
+export function fitAnchors(root,index){
+ root.updateMatrixWorld(true);
+ const parts=[...root.userData.parts].sort((a,b)=>new THREE.Box3().setFromObject(a).getCenter(new THREE.Vector3()).x-new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()).x);
+ const part=parts[0],box=new THREE.Box3().setFromObject(part),size=box.getSize(new THREE.Vector3());
+ const vertices=[];part.traverse(o=>{if(o.isMesh){const a=o.geometry.attributes.position;for(let i=0;i<a.count;i++)vertices.push(new THREE.Vector3().fromBufferAttribute(a,i).applyMatrix4(o.matrixWorld));}});
+ return DOCENT[index].map(d=>{
+  const x=box.min.x+size.x*d.xy[0],y=box.min.y+size.y*d.xy[1];let best=null,score=Infinity;
+  for(const v of vertices){const s=((v.x-x)/size.x)**2+((v.y-y)/size.y)**2+.0001*((box.max.z-v.z)/Math.max(size.z,.001))**2;if(s<score){score=s;best=v;}}
+  return {...d,point:best.clone()};
+ });
+}
+export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore}){
+ const entry=document.querySelector('#feel-entry'),exit=document.querySelector('#feel-exit'),panel=document.querySelector('#feel-panel'),canvas=document.querySelector('#feel-canvas'),layer=document.querySelector('#feel-points'),status=document.querySelector('#feel-status'),ctx=canvas.getContext('2d');
+ const sound=createTactileSound();let speechId=0;let active=false,mask=null,w=0,h=0,points=[],pointer=null,inside=false,timer=null,cue=null,chosen=null,arrived=null,gesture=0,lastSpokenGesture=-1,last=null;
+ function speak(text){status.textContent=text;if(!globalThis.speechSynthesis)return;const id=++speechId;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=.95;u.onerror=e=>{if(id===speechId&&active&&!['interrupted','canceled'].includes(e.error))status.textContent=text+' (음성 재생 불가 · 글로 확인해 주세요)';};speechSynthesis.speak(u);}
+ function vibrate(p){try{navigator.vibrate?.(p);}catch{}}
+ function clearFeedback(){clearTimeout(timer);clearTimeout(cue);timer=cue=null;vibrate(0);sound.stop();inside=false;last=null;arrived=null;canvas.classList.remove('contact');}
+ function pulse(){if(!active||!inside||pointer===null||document.hidden)return;vibrate([60,65,60,65,60]);timer=setTimeout(pulse,350);}
+ function announce(p,detail){clearTimeout(cue);cue=null;sound.stop();sound.cue(1,true);speak(detail?p.text:p.name);}
+ function selectPoint(p,detail){chosen=p;announce(p,detail);layer.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('selected',points[i]===p));}
+ function proximity(){clearTimeout(cue);cue=null;if(!active||!inside||!last||arrived||document.hidden)return;let nearest=null,d=Infinity;for(const p of points){const dist=Math.hypot(p.x-last.x,p.y-last.y);if(dist<d){nearest=p;d=dist;}}if(nearest&&d<100){const near=1-d/100;if(!globalThis.speechSynthesis?.speaking)sound.cue(near);cue=setTimeout(proximity,800-near*500);}}
+ function hit(x,y){return x>=0&&y>=0&&x<w&&y<h&&mask[(h-1-Math.floor(y))*w+Math.floor(x)]===1;}
+ function contact(e){
+  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*w/r.width,y=(e.clientY-r.top)*h/r.height,within=hit(x,y);
+  if(within!==inside){clearFeedback();inside=within;if(within){sound.play();pulse();canvas.classList.add('contact');}}
+  last={x,y};let p=null,d=Infinity;for(const q of points){const dist=Math.hypot(q.x-x,q.y-y);if(dist<d){p=q;d=dist;}}
+  if(!within||d>24)p=null;
+  if(p){if(arrived!==p&&(lastSpokenGesture!==gesture||chosen!==p)){selectPoint(p,chosen===p&&lastSpokenGesture!==gesture);lastSpokenGesture=gesture;}arrived=p;clearTimeout(cue);cue=null;}
+  else{arrived=null;if(!cue)proximity();if(!globalThis.speechSynthesis?.speaking)status.textContent=within?'유물 안 · 번호 지점을 찾아보세요':'유물 밖';}
+ }
+ function layout(){
+  const root=getRoot(),r=renderer.domElement.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));canvas.width=w;canvas.height=h;
+  root.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+  const target=new THREE.WebGLRenderTarget(w,h),material=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}),scene=new THREE.Scene();scene.background=new THREE.Color(0);const copy=root.clone(true);copy.traverse(o=>{if(o.isMesh)o.material=material;});scene.add(copy);const data=new Uint8Array(w*h*4),previous=renderer.getRenderTarget();
+  try{renderer.setRenderTarget(target);renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,w,h,data);}finally{renderer.setRenderTarget(previous);target.dispose();material.dispose();}
+  mask=new Uint8Array(w*h);for(let i=0;i<mask.length;i++)mask[i]=data[i*4]>127?1:0;
+  // Transparent outline keeps the original 3D colors visible.
+  const outline=ctx.createImageData(w,h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=(h-1-y)*w+x;if(mask[i]&&(!mask[i-1]||!mask[i+1]||!mask[i-w]||!mask[i+w])){const j=(y*w+x)*4;outline.data.set([174,136,64,220],j);}}ctx.putImageData(outline,0,0);
+  points=fitAnchors(root,getIndex()).map(p=>{const q=p.point.clone().project(camera);let x=(q.x+1)*w/2,y=(1-q.y)*h/2;
+   // A vertex can round to an empty pixel at the silhouette; move only a few pixels onto it.
+   if(!hit(x,y)){let best=Infinity;for(let dy=-12;dy<=12;dy++)for(let dx=-12;dx<=12;dx++)if(dx*dx+dy*dy<best&&hit(x+dx,y+dy)){best=dx*dx+dy*dy;p.offset=[dx,dy];}if(p.offset){x+=p.offset[0];y+=p.offset[1];}}
+   return {...p,x,y};});
+  layer.replaceChildren();points.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=i+1;b.setAttribute('aria-label',`${i+1}. ${p.name}`);b.style.left=`${p.x/w*100}%`;b.style.top=`${p.y/h*100}%`;b.onclick=()=>{sound.unlock();selectPoint(p,chosen===p);};layer.append(b);});
+ }
+ function end(){if(!active)return;active=false;clearFeedback();pointer=null;chosen=null;points=[];mask=null;sound.reset();globalThis.speechSynthesis?.cancel();panel.hidden=true;canvas.hidden=true;layer.hidden=true;document.body.classList.remove('feeling');entry.setAttribute('aria-pressed','false');restore();entry.focus();}
+ entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-pressed','true');try{layout();exit.focus();speak('손끝탐색입니다. 정면으로 고정된 유물을 따라 손가락을 움직여 보세요. 번호에 닿으면 이름을, 손을 뗀 뒤 다시 닿으면 설명을 들려드립니다.');}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';console.error(e);}};
+ canvas.addEventListener('pointerdown',e=>{if(!active||pointer!==null)return;e.preventDefault();sound.unlock();globalThis.speechSynthesis?.cancel();pointer=e.pointerId;gesture++;canvas.setPointerCapture(pointer);contact(e);});
+ canvas.addEventListener('pointermove',e=>{if(active&&pointer===e.pointerId){e.preventDefault();contact(e);}});
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>{if(pointer!==e.pointerId)return;pointer=null;clearFeedback();if(event!=='pointerup'){globalThis.speechSynthesis?.cancel();chosen=null;}});
+ exit.onclick=end;addEventListener('keydown',e=>{if(active&&e.key==='Escape'){e.preventDefault();end();}});addEventListener('resize',()=>{if(active)end();});document.addEventListener('visibilitychange',()=>{if(document.hidden)end();});addEventListener('pagehide',end);
+ return {isActive:()=>active,end};
+}
