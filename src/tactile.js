@@ -52,7 +52,7 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore}){
    for(const [dx,dy] of [[-radius,0],[radius,0],[0,-radius],[0,radius],[-2,-2],[2,2],[-2,2],[2,-2]]){
     const nx=x+dx,ny=h-1-y+dy;if(nx>=0&&ny>=0&&nx<w&&ny<h&&mask[ny*w+nx]!==filled){edge=true;break;}
    }
-   outline.data.set(edge?[245,220,164,255]:filled?[27,25,20,80]:[12,12,12,255],(y*w+x)*4);
+   outline.data.set(edge?[237,207,139,255]:filled?[27,25,20,80]:[17,27,42,255],(y*w+x)*4);
   }ctx.putImageData(outline,0,0);
   const ray=new THREE.Raycaster();
   points=fitAnchors(root,getIndex()).filter(p=>{
