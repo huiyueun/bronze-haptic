@@ -1,4 +1,4 @@
-import {setupTactile} from './tactile.js';
+import {setupTactile,fitAnchors} from './tactile.js';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
@@ -9,7 +9,7 @@ const $=s=>document.querySelector(s),stage=$('#stage'),host=$('#webgl');
 let selected=0,enabled=false,busy=false,sensorSeen=false,sensorTimer=0,audioContext,master,compressor,rotating=false;
 let energyVisual=0,lastFrame=0,frame=0,scene,renderer,camera,orbit,objects=[],drag=null,pulses=[],timers=new Set(),voices=new Set();
 let lastOrientation=0,orientationAvailable=false,motion=new MotionTracker(),sensorGeneration=0,slide=null;
-let statusTimer,tactile,savedYaw=0;
+let statusTimer,tactile;
 const status=text=>{const note=$('#activation-status');if(note)note.textContent=text;const el=$('#status');el.textContent=text;el.hidden=!text;clearTimeout(statusTimer);if(text)statusTimer=setTimeout(()=>el.hidden=true,5500);};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const nav=$('#types');
@@ -40,7 +40,7 @@ async function ensureAsset(index){
    const center=new THREE.Box3().setFromObject(child).getCenter(new THREE.Vector3());model.worldToLocal(center);
    const pivot=new THREE.Group();model.add(pivot);pivot.position.copy(center);pivot.updateMatrixWorld(true);pivot.attach(child);
    pivot.userData.baseY=pivot.position.y;pivot.userData.sx=0;pivot.userData.sy=0;pivot.userData.displayScale=scale;return pivot;
-  });group.userData.loaded=true;group.userData.textureSize=size;
+  });group.userData.loaded=true;group.userData.textureSize=size;fitAnchors(group,index);
  })().catch(error=>{assetLoads.delete(index);throw error;}));
  try{await assetLoads.get(index);if(selected===index)$('#asset-loading').hidden=true;wake();}catch(error){if(selected===index){$('#asset-loading').textContent='원본을 불러오지 못했습니다. 여기를 눌러 다시 시도하세요.';$('#asset-loading').hidden=false;}console.error(error);}
 }
@@ -118,10 +118,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensor
 setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(1))));wake();
 
 if(renderer)tactile=setupTactile({renderer,camera,getRoot:()=>objects[selected],getIndex:()=>selected,
- freeze:()=>{resize();clearTimeout(sensorTimer);status('');stopSound();motion.reset();drag=null;slide=null;swayX=swayY=swayTargetX=swayTargetY=0;
-  const g=objects[selected];savedYaw=g.userData.yaw;g.userData.yaw=0;objects.forEach((o,i)=>{o.visible=i===selected;o.position.x=0;});g.rotation.set(0,0,0);
-  for(const p of g.userData.parts){p.rotation.set(0,0,0);p.position.y=p.userData.baseY;p.userData.sx=p.userData.sy=0;}renderer.render(scene,camera);},
- restore:()=>{objects[selected].userData.yaw=savedYaw;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
+ freeze:()=>{clearTimeout(sensorTimer);status('');stopSound();motion.reset();drag=null;slide=null;swayX=swayY=swayTargetX=swayTargetY=0;
+  objects.forEach((o,i)=>{o.visible=i===selected;});renderer.render(scene,camera);},
+ restore:()=>{objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
 });
 $('#enable-shake').onclick=()=>$('#activation').showModal();
 $('#feel-without-sensors').onclick=()=>{$('#enable-shake').hidden=false;$('#activation').close();$('#feel-entry').click();};

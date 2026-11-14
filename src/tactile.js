@@ -2,17 +2,22 @@ import * as THREE from 'three';
 import {DOCENT} from './tactile-data.mjs';
 import {createTactileSound} from './tactile-sound.js';
 
+const anchorCache=new WeakMap();
 // Surface anchors are fitted once to the real mesh, rather than screen coordinates.
 export function fitAnchors(root,index){
  root.updateMatrixWorld(true);
+ if(anchorCache.has(root))return anchorCache.get(root).map(p=>({...p,point:p.part.localToWorld(p.local.clone())}));
  const parts=[...root.userData.parts].sort((a,b)=>new THREE.Box3().setFromObject(a).getCenter(new THREE.Vector3()).x-new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()).x);
  const part=parts[0],box=new THREE.Box3().setFromObject(part),size=box.getSize(new THREE.Vector3());
  const vertices=[];part.traverse(o=>{if(o.isMesh){const a=o.geometry.attributes.position;for(let i=0;i<a.count;i++)vertices.push(new THREE.Vector3().fromBufferAttribute(a,i).applyMatrix4(o.matrixWorld));}});
- return DOCENT[index].map(d=>{
+ const anchors=DOCENT[index].map((d,number)=>{
   const x=box.min.x+size.x*d.xy[0],y=box.min.y+size.y*d.xy[1];let best=null,score=Infinity;
   for(const v of vertices){const s=((v.x-x)/size.x)**2+((v.y-y)/size.y)**2+.0001*((box.max.z-v.z)/Math.max(size.z,.001))**2;if(s<score){score=s;best=v;}}
-  return {...d,point:best.clone()};
+  const ray=new THREE.Raycaster(new THREE.Vector3(best.x,best.y,box.max.z+1),new THREE.Vector3(0,0,-1));
+  const surface=ray.intersectObject(part,true)[0]?.point||best;
+  return {...d,number:number+1,part,local:part.worldToLocal(surface.clone())};
  });
+ anchorCache.set(root,anchors);return fitAnchors(root,index);
 }
 export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore}){
  const entry=document.querySelector('#feel-entry'),exit=document.querySelector('#feel-exit'),panel=document.querySelector('#feel-panel'),canvas=document.querySelector('#feel-canvas'),layer=document.querySelector('#feel-points'),status=document.querySelector('#feel-status'),ctx=canvas.getContext('2d');
@@ -31,7 +36,7 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore}){
   last={x,y};let p=null,d=Infinity;for(const q of points){const dist=Math.hypot(q.x-x,q.y-y);if(dist<d){p=q;d=dist;}}
   if(!within||d>24)p=null;
   if(p){if(arrived!==p&&(lastSpokenGesture!==gesture||chosen!==p)){selectPoint(p,chosen===p&&lastSpokenGesture!==gesture);lastSpokenGesture=gesture;}arrived=p;clearTimeout(cue);cue=null;}
-  else{arrived=null;if(!cue)proximity();if(!globalThis.speechSynthesis?.speaking)status.textContent=within?'유물 안 · 번호 지점을 찾아보세요':'유물 밖';}
+  else{arrived=null;if(!cue)proximity();if(!globalThis.speechSynthesis?.speaking)status.textContent='';}
  }
  function layout(){
   const root=getRoot(),r=renderer.domElement.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));canvas.width=w;canvas.height=h;
@@ -39,16 +44,29 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore}){
   const target=new THREE.WebGLRenderTarget(w,h),material=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}),scene=new THREE.Scene();scene.background=new THREE.Color(0);const copy=root.clone(true);copy.traverse(o=>{if(o.isMesh)o.material=material;});scene.add(copy);const data=new Uint8Array(w*h*4),previous=renderer.getRenderTarget();
   try{renderer.setRenderTarget(target);renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,w,h,data);}finally{renderer.setRenderTarget(previous);target.dispose();material.dispose();}
   mask=new Uint8Array(w*h);for(let i=0;i<mask.length;i++)mask[i]=data[i*4]>127?1:0;
-  // Transparent outline keeps the original 3D colors visible.
-  const outline=ctx.createImageData(w,h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=(h-1-y)*w+x;if(mask[i]&&(!mask[i-1]||!mask[i+1]||!mask[i-w]||!mask[i+w])){const j=(y*w+x)*4;outline.data.set([174,136,64,220],j);}}ctx.putImageData(outline,0,0);
-  points=fitAnchors(root,getIndex()).map(p=>{const q=p.point.clone().project(camera);let x=(q.x+1)*w/2,y=(1-q.y)*h/2;
+  // Match the original tactile viewer: dark surroundings, translucent interior,
+  // and a broad gold boundary around every visible edge and opening.
+  const outline=ctx.createImageData(w,h),radius=3;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const index=(h-1-y)*w+x,filled=mask[index];let edge=false;
+   for(const [dx,dy] of [[-radius,0],[radius,0],[0,-radius],[0,radius],[-2,-2],[2,2],[-2,2],[2,-2]]){
+    const nx=x+dx,ny=h-1-y+dy;if(nx>=0&&ny>=0&&nx<w&&ny<h&&mask[ny*w+nx]!==filled){edge=true;break;}
+   }
+   outline.data.set(edge?[245,220,164,255]:filled?[27,25,20,80]:[12,12,12,255],(y*w+x)*4);
+  }ctx.putImageData(outline,0,0);
+  const ray=new THREE.Raycaster();
+  points=fitAnchors(root,getIndex()).filter(p=>{
+   const q=p.point.clone().project(camera);if(Math.abs(q.x)>=1||Math.abs(q.y)>=1||q.z<=-1||q.z>=1)return false;
+   const direction=p.point.clone().sub(camera.position),distance=direction.length();ray.set(camera.position,direction.normalize());
+   const first=ray.intersectObject(root,true)[0];let object=first?.object;while(object){if(object===p.part)return true;object=object.parent;}return false;
+  }).map(p=>{const q=p.point.clone().project(camera);let x=(q.x+1)*w/2,y=(1-q.y)*h/2;
    // A vertex can round to an empty pixel at the silhouette; move only a few pixels onto it.
    if(!hit(x,y)){let best=Infinity;for(let dy=-12;dy<=12;dy++)for(let dx=-12;dx<=12;dx++)if(dx*dx+dy*dy<best&&hit(x+dx,y+dy)){best=dx*dx+dy*dy;p.offset=[dx,dy];}if(p.offset){x+=p.offset[0];y+=p.offset[1];}}
    return {...p,x,y};});
-  layer.replaceChildren();points.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=i+1;b.setAttribute('aria-label',`${i+1}. ${p.name}`);b.style.left=`${p.x/w*100}%`;b.style.top=`${p.y/h*100}%`;b.onclick=()=>{sound.unlock();selectPoint(p,chosen===p);};layer.append(b);});
+  layer.replaceChildren();points.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=p.number;b.setAttribute('aria-label',`${p.number}. ${p.name}`);b.style.left=`${p.x/w*100}%`;b.style.top=`${p.y/h*100}%`;b.onclick=()=>{sound.unlock();selectPoint(p,chosen===p);};layer.append(b);});
  }
  function end(){if(!active)return;active=false;clearFeedback();pointer=null;chosen=null;points=[];mask=null;sound.reset();globalThis.speechSynthesis?.cancel();panel.hidden=true;canvas.hidden=true;layer.hidden=true;document.body.classList.remove('feeling');entry.setAttribute('aria-pressed','false');restore();entry.focus();}
- entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-pressed','true');try{layout();exit.focus();speak('손끝탐색입니다. 정면으로 고정된 유물을 따라 손가락을 움직여 보세요. 번호에 닿으면 이름을, 손을 뗀 뒤 다시 닿으면 설명을 들려드립니다.');}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';console.error(e);}};
+ entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-pressed','true');try{layout();exit.focus();status.textContent='';}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';console.error(e);}};
  canvas.addEventListener('pointerdown',e=>{if(!active||pointer!==null)return;e.preventDefault();sound.unlock();globalThis.speechSynthesis?.cancel();pointer=e.pointerId;gesture++;canvas.setPointerCapture(pointer);contact(e);});
  canvas.addEventListener('pointermove',e=>{if(active&&pointer===e.pointerId){e.preventDefault();contact(e);}});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>{if(pointer!==e.pointerId)return;pointer=null;clearFeedback();if(event!=='pointerup'){globalThis.speechSynthesis?.cancel();chosen=null;}});
