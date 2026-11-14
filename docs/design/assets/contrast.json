@@ -1,0 +1,44 @@
+[
+  {
+    "label": "본문 / 아이보리",
+    "foreground": "#192536",
+    "background": "#f6f2e9",
+    "ratio": 13.83
+  },
+  {
+    "label": "보조 글자 / 아이보리",
+    "foreground": "#515d6d",
+    "background": "#f6f2e9",
+    "ratio": 5.99
+  },
+  {
+    "label": "파랑 / 아이보리",
+    "foreground": "#26488c",
+    "background": "#f6f2e9",
+    "ratio": 7.87
+  },
+  {
+    "label": "흰색 / 실행 버튼",
+    "foreground": "#ffffff",
+    "background": "#26488c",
+    "ratio": 8.79
+  },
+  {
+    "label": "골드 / 탐색 바탕",
+    "foreground": "#edcf8b",
+    "background": "#111b2a",
+    "ratio": 11.45
+  },
+  {
+    "label": "밝은 글자 / 탐색 바탕",
+    "foreground": "#f6f2e9",
+    "background": "#111b2a",
+    "ratio": 15.48
+  },
+  {
+    "label": "경계선 / 아이보리",
+    "foreground": "#7a7e82",
+    "background": "#f6f2e9",
+    "ratio": 3.66
+  }
+]
