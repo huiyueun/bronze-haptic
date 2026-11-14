@@ -13,7 +13,7 @@ let statusTimer,tactile;
 const status=text=>{const note=$('#activation-status');if(note)note.textContent=text;const el=$('#status');el.textContent=text;el.hidden=!text;clearTimeout(statusTimer);if(text)statusTimer=setTimeout(()=>el.hidden=true,5500);};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const nav=$('#types');
-TYPES.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.name;b.dataset.index=i;b.onclick=()=>select(i);nav.append(b);});
+TYPES.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.name;if(t.name==='조합식쌍두령')b.replaceChildren(document.createTextNode('조합식'),document.createElement('wbr'),document.createTextNode('쌍두령'));b.dataset.index=i;b.onclick=()=>select(i);nav.append(b);});
 const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),textureLoader=new THREE.TextureLoader();
 const assetLoads=new Map();
 const sampleBuffers=new Map(),sampleLoads=new Map(),sampleCursor=new Map();
@@ -110,7 +110,7 @@ stage.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;
 function endDrag(e){if(drag?.id===e.pointerId)drag=null;}
 stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercancel',endDrag);stage.addEventListener('lostpointercapture',endDrag);
 stage.addEventListener('keydown',e=>{if(tactile?.isActive())return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();if(objects[selected])objects[selected].userData.yaw+=(e.key==='ArrowRight'?1:-1)*.15;wake();}});
-$('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
+$('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
 $('#fullscreen').onclick=async()=>{const root=$('#experience');try{if(document.fullscreenElement)await document.exitFullscreen();else if(root.classList.contains('immersive'))root.classList.remove('immersive');else if(root.requestFullscreen)await root.requestFullscreen();else{root.classList.add('immersive');status('화면 확장 모드 · 이 브라우저는 시스템 전체화면을 지원하지 않습니다.');}}catch{root.classList.toggle('immersive');status('화면 확장 모드로 전환했습니다.');}syncFullscreen();};
 function syncFullscreen(){const active=!!document.fullscreenElement||$('#experience').classList.contains('immersive');$('#fullscreen').setAttribute('aria-label',active?'전체화면 종료':'전체화면');$('#fullscreen').textContent=active?'전체화면 종료':'전체화면';$('#fullscreen').setAttribute('aria-pressed',String(active));resize();}document.addEventListener('fullscreenchange',syncFullscreen);
 $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info').onclick=()=>$('#info').close();
