@@ -89,11 +89,11 @@ function drawPattern(now){const c=$('#pattern'),w=c.clientWidth,h=c.clientHeight
 function onMotion(e){if(!enabled||document.hidden||tactile?.isActive())return;const reading=motion.sample(e,performance.now());if(!reading)return;lastSensorAt=performance.now();const raw=e.accelerationIncludingGravity;const ax=Number.isFinite(e.acceleration?.x)?e.acceleration.x:(raw?.x||0)-(motion.gravity?.x||0);const ay=Number.isFinite(e.acceleration?.y)?e.acceleration.y:(raw?.y||0)-(motion.gravity?.y||0);const strength=v=>Math.sign(v)*Math.pow(Math.abs(clamp(v/18,-1,1)),1.3);swayTargetX=strength(ax);swayTargetY=strength(ay);if(Math.abs(swayTargetX)+Math.abs(swayTargetY)+Math.abs(swayX)+Math.abs(swayY)>.002)wake();if(!sensorSeen){sensorSeen=true;clearTimeout(sensorTimer);status('');}if(orientationAvailable)motion.tilt=lastOrientation;if(reading.energy>0)impact(reading.energy,motion.tilt);}
 function onOrientation(e){if(!enabled||tactile?.isActive()||!Number.isFinite(e.gamma))return;orientationAvailable=true;lastOrientation=clamp(e.gamma/90,-1,1);motion.tilt=lastOrientation;}
 function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);$('#start').disabled=false;motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
-async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
+async function start(){if(busy)return;if(enabled){void enterFullscreen();$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
  const requests=[window.DeviceMotionEvent,window.DeviceOrientationEvent].map(API=>typeof API?.requestPermission==='function'?API.requestPermission().catch(()=>'denied'):Promise.resolve('granted'));
- const soundReady=audio();const [motionPermission,orientationPermission]=await Promise.all(requests);const audioReady=await soundReady;
+ const soundReady=audio();void enterFullscreen();const [motionPermission,orientationPermission]=await Promise.all(requests);const audioReady=await soundReady;
  if(generation!==sensorGeneration||document.hidden)return;
  if(!audioReady){status('소리를 시작할 수 없습니다. 브라우저 소리 설정을 확인해 주세요.');return;}
  try{await Promise.all(TYPES.map((_,i)=>loadSamples(i)));}catch{status('음원을 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.');return;}if(generation!==sensorGeneration||document.hidden)return;status('');
@@ -128,7 +128,12 @@ document.addEventListener('pointerdown',e=>{if(!e.target.closest('#types,#feel-e
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPreview();});
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
-$('#fullscreen').onclick=async()=>{const root=$('#experience');try{if(document.fullscreenElement)await document.exitFullscreen();else if(root.classList.contains('immersive'))root.classList.remove('immersive');else if(root.requestFullscreen)await root.requestFullscreen();else{root.classList.add('immersive');status('화면 확장 모드 · 이 브라우저는 시스템 전체화면을 지원하지 않습니다.');}}catch{root.classList.toggle('immersive');status('화면 확장 모드로 전환했습니다.');}syncFullscreen();};
+async function enterFullscreen(){const root=$('#experience');if(document.fullscreenElement||root.classList.contains('immersive'))return;
+ try{if(typeof root.requestFullscreen==='function'&&document.fullscreenEnabled!==false)await root.requestFullscreen();else root.classList.add('immersive');}
+ catch{root.classList.add('immersive');}
+ syncFullscreen();
+}
+$('#fullscreen').onclick=async()=>{const root=$('#experience');if(document.fullscreenElement){try{await document.exitFullscreen();}catch{status('전체화면을 종료하지 못했습니다. 브라우저의 뒤로 가기 또는 Escape 키를 사용해 주세요.');}}else if(root.classList.contains('immersive'))root.classList.remove('immersive');else await enterFullscreen();syncFullscreen();};
 function syncFullscreen(){const active=!!document.fullscreenElement||$('#experience').classList.contains('immersive');$('#fullscreen').setAttribute('aria-label',active?'전체화면 종료':'전체화면');$('#fullscreen').title=active?'전체화면 종료':'전체화면';$('#fullscreen').setAttribute('aria-pressed',String(active));resize();}document.addEventListener('fullscreenchange',syncFullscreen);
 $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info').onclick=()=>$('#info').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensors();audioContext?.suspend();if(frame)cancelAnimationFrame(frame);frame=0;}else{wake();if(!$('#activation').open)$('#activation').showModal();}});window.addEventListener('pagehide',()=>stopSensors());
