@@ -149,3 +149,5 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 #sensor-note{position:absolute;top:max(16px,env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left));right:128px;margin:0;color:var(--muted,#515d6d);font-size:1rem;line-height:1.5;z-index:6;word-break:keep-all;pointer-events:none}
 .feeling #sensor-note{display:none}
 @media(max-height:480px){#experience{--caption-bottom:116px}#stage{bottom:calc(var(--caption-bottom) + var(--caption-height) + 34px)}}
+
+#sensor-note{right:72px}

@@ -91,11 +91,11 @@ function onOrientation(e){if(!enabled||tactile?.isActive()||!Number.isFinite(e.g
 function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);$('#start').disabled=false;motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
 function sensorNotice(text=''){const note=$('#sensor-note');note.textContent=text|| (typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');note.hidden=!note.textContent;}
 sensorNotice();
-async function start(){if(busy)return;if(enabled){void enterFullscreen();$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
+async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
  const requests=[window.DeviceMotionEvent,window.DeviceOrientationEvent].map(API=>typeof API?.requestPermission==='function'?API.requestPermission().catch(()=>'denied'):Promise.resolve('granted'));
- const soundReady=audio();void enterFullscreen();const [motionPermission,orientationPermission]=await Promise.all(requests);const audioReady=await soundReady;
+ const soundReady=audio();const [motionPermission,orientationPermission]=await Promise.all(requests);const audioReady=await soundReady;
  if(generation!==sensorGeneration||document.hidden)return;
  if(!audioReady){status('소리를 시작할 수 없습니다. 브라우저 소리 설정을 확인해 주세요.');return;}
  try{await Promise.all(TYPES.map((_,i)=>loadSamples(i)));}catch{status('음원을 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.');return;}if(generation!==sensorGeneration||document.hidden)return;status('');
@@ -117,7 +117,7 @@ $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRi
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
 menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
 new ResizeObserver(()=>{if(tactile?.isActive())return;const height=menuNote.parentElement===menuRoot&&!menuNote.hidden?menuNote.getBoundingClientRect().height:0;menuRoot.style.setProperty('--caption-height',Math.max(96,height)+'px');resize();}).observe(menuNote);
-const previewControls='#types button,#feel-entry,#fullscreen,#feel-exit,#about,#close-info';
+const previewControls='#types button,#feel-entry,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
 function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';menuRoot.append(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
@@ -136,7 +136,7 @@ menuRoot.addEventListener('click',async e=>{const button=e.target.closest('butto
  e.preventDefault();e.stopImmediatePropagation();
  if(pendingMenu===button){
   const extraDescriptions={'feel-exit':'유물을 다시 돌려보고 흔들 수 있습니다.','about':'유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'유물 화면으로 돌아갑니다.'};
-  const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?'유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.':(document.fullscreenElement||menuRoot.classList.contains('immersive')?'기본 화면으로 돌아갑니다.':'화면 전체로 유물을 표시합니다.'));
+  const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:'유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.');
   clearMenuPreview();await button.onclick?.call(button,e);placeMenuNote();menuNote.hidden=false;menuNote.textContent=description;speakMenu(description);return;
  }
  clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
@@ -151,13 +151,6 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPr
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
 $('#info').addEventListener('close',()=>{if(menuNote.parentElement===$('#info'))clearMenuPreview();});
 addEventListener('resize',()=>{if(pendingMenu)clearMenuPreview();else if(!menuNote.hidden)placeMenuNote();});
-async function enterFullscreen(){const root=$('#experience');if(document.fullscreenElement||root.classList.contains('immersive'))return;
- try{if(typeof root.requestFullscreen==='function'&&document.fullscreenEnabled!==false)await root.requestFullscreen();else root.classList.add('immersive');}
- catch{root.classList.add('immersive');}
- syncFullscreen();
-}
-$('#fullscreen').onclick=async()=>{const root=$('#experience');if(document.fullscreenElement){try{await document.exitFullscreen();}catch{status('전체화면을 종료하지 못했습니다. 브라우저의 뒤로 가기 또는 Escape 키를 사용해 주세요.');}}else if(root.classList.contains('immersive'))root.classList.remove('immersive');else await enterFullscreen();syncFullscreen();};
-function syncFullscreen(){const active=!!document.fullscreenElement||$('#experience').classList.contains('immersive');$('#fullscreen').setAttribute('aria-label',active?'전체화면 종료':'전체화면');$('#fullscreen').title=active?'전체화면 종료':'전체화면';$('#fullscreen').setAttribute('aria-pressed',String(active));resize();}document.addEventListener('fullscreenchange',syncFullscreen);
 $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info').onclick=()=>$('#info').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensors();audioContext?.suspend();if(frame)cancelAnimationFrame(frame);frame=0;}else{wake();if(!$('#activation').open)$('#activation').showModal();}});window.addEventListener('pagehide',()=>stopSensors());
 setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(1))));wake();
