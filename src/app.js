@@ -114,20 +114,26 @@ $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRi
 // First activation describes a control; the next activation of that control executes it.
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
 menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
+const previewControls='#types button,#feel-entry,#fullscreen,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
-function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
-menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||!button.matches('#types button,#feel-entry,#fullscreen')||button.disabled||!e.isTrusted)return;
+function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';menuRoot.append(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
+menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||!button.matches(previewControls)||button.disabled||!e.isTrusted)return;
  if(pendingMenu===button){clearMenuPreview();return;}
  e.preventDefault();e.stopImmediatePropagation();clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
- const description=button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.':'유물 살펴보기. 유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.');
+ const extraDescriptions={'feel-exit':'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.','about':'출처 정보. 유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'출처 정보 닫기. 유물 화면으로 돌아갑니다.'};
+ if(button.id==='feel-exit')button.before(menuNote);
+ if(button.id==='close-info')$('#info-title').after(menuNote);
+ const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.':'유물 살펴보기. 유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.'));
  const message=description+' 같은 버튼을 한 번 더 누르면 실행합니다.';menuNote.hidden=false;menuNote.textContent=message;
  if('speechSynthesis' in window&&typeof SpeechSynthesisUtterance==='function'){window.speechSynthesis.cancel();menuSpeech=new SpeechSynthesisUtterance(message);menuSpeech.lang='ko-KR';menuSpeech.rate=.95;window.speechSynthesis.speak(menuSpeech);}
 },true);
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('#types,#feel-entry,#fullscreen'))clearMenuPreview();});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest(previewControls))clearMenuPreview();});
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPreview();});
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
+$('#info').addEventListener('close',clearMenuPreview);
+addEventListener('resize',clearMenuPreview);
 async function enterFullscreen(){const root=$('#experience');if(document.fullscreenElement||root.classList.contains('immersive'))return;
  try{if(typeof root.requestFullscreen==='function'&&document.fullscreenEnabled!==false)await root.requestFullscreen();else root.classList.add('immersive');}
  catch{root.classList.add('immersive');}

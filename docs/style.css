@@ -132,3 +132,9 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 /* Larger captions for tactile exploration, with room for long descriptions. */
 #feel-status{font-size:1.375rem;font-weight:500;line-height:1.65;padding:12px 16px;max-height:32svh;overflow-y:auto;overflow-wrap:anywhere;word-break:keep-all}
 #feel-exit{font-size:1.25rem;line-height:1.5;min-height:56px}
+
+/* Two-step activation hints stay in the active panel, including modal dialogs. */
+#feel-panel #menu-description,#info #menu-description{position:static;max-width:none;max-height:24svh;margin:12px 0;font-size:20px;line-height:1.65}
+.feeling #feel-panel #menu-description:not([hidden]){display:block!important}
+#feel-exit[data-preview=true],#about[data-preview=true],#close-info[data-preview=true]{outline:3px dashed var(--blue);outline-offset:2px}
+.feeling #feel-exit[data-preview=true]{outline-color:var(--gold)}
