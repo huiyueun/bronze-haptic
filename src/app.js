@@ -118,6 +118,11 @@ const previewControls='#types button,#feel-entry,#fullscreen,#feel-exit,#about,#
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
 function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';menuRoot.append(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
+function placeMenuNote(){
+ if($('#info').open)$('#info-title').after(menuNote);
+ else if(tactile?.isActive())$('#feel-exit').before(menuNote);
+ else menuRoot.append(menuNote);
+}
 function speakMenu(text,preview=false){
  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
  window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.lang='ko-KR';utterance.rate=.95;
@@ -129,7 +134,7 @@ menuRoot.addEventListener('click',async e=>{const button=e.target.closest('butto
  if(pendingMenu===button){
   const extraDescriptions={'feel-exit':'유물을 다시 돌려보고 흔들 수 있습니다.','about':'유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'유물 화면으로 돌아갑니다.'};
   const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?'유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.':(document.fullscreenElement||menuRoot.classList.contains('immersive')?'기본 화면으로 돌아갑니다.':'화면 전체로 유물을 표시합니다.'));
-  clearMenuPreview();await button.onclick?.call(button,e);speakMenu(description);return;
+  clearMenuPreview();await button.onclick?.call(button,e);placeMenuNote();menuNote.hidden=false;menuNote.textContent=description;speakMenu(description);return;
  }
  clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
  if(button.id==='feel-exit')button.before(menuNote);
@@ -141,8 +146,8 @@ document.addEventListener('pointerdown',e=>{if(!e.target.closest(previewControls
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPreview();});
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
-$('#info').addEventListener('close',clearMenuPreview);
-addEventListener('resize',clearMenuPreview);
+$('#info').addEventListener('close',()=>{if(menuNote.parentElement===$('#info'))clearMenuPreview();});
+addEventListener('resize',()=>{if(pendingMenu)clearMenuPreview();else if(!menuNote.hidden)placeMenuNote();});
 async function enterFullscreen(){const root=$('#experience');if(document.fullscreenElement||root.classList.contains('immersive'))return;
  try{if(typeof root.requestFullscreen==='function'&&document.fullscreenEnabled!==false)await root.requestFullscreen();else root.classList.add('immersive');}
  catch{root.classList.add('immersive');}
