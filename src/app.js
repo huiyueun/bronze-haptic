@@ -106,6 +106,9 @@ async function start(){if(busy)return;if(enabled){$('#activation').close();retur
  status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)sensorNotice('*동작 센서 연결 안 됨');},3500);wake();
  }catch{status('센서를 시작하지 못했습니다. 화면을 터치해 다시 시도하세요.');}finally{busy=false;$('#start').disabled=false;}}
 $('#start').onclick=start;
+// Begin sequential navigation at the artifact menu after the entry dialog closes.
+let enteredOnce=false;
+$('#activation').addEventListener('close',()=>{const target=enteredOnce?nav.querySelector('[aria-current="true"]'):nav.querySelector('button');enteredOnce=true;target?.focus({preventScroll:true});});
 // Horizontal drag changes only the object's yaw; vertical dragging never tilts it.
 stage.addEventListener('pointerdown',e=>{if(tactile?.isActive()||e.button!==0||drag)return;drag={id:e.pointerId,x:e.clientX,yaw:objects[selected]?.userData.yaw||0};stage.setPointerCapture(e.pointerId);});
 stage.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const g=objects[selected];if(g){g.userData.yaw=drag.yaw+(e.clientX-drag.x)*.009;wake();}});
