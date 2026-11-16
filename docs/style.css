@@ -129,3 +129,6 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 .signal{bottom:calc(154px + env(safe-area-inset-bottom))}
 #menu-description{bottom:calc(154px + env(safe-area-inset-bottom))}
 @media(max-height:480px){#types button{min-height:48px;padding:4px}#top-nav{bottom:8px}#feel-entry{bottom:64px}#stage{top:60px;bottom:146px}.signal{bottom:116px}#menu-description{bottom:116px}}
+/* Larger captions for tactile exploration, with room for long descriptions. */
+#feel-status{font-size:1.375rem;font-weight:500;line-height:1.65;padding:12px 16px;max-height:32svh;overflow-y:auto;overflow-wrap:anywhere;word-break:keep-all}
+#feel-exit{font-size:1.25rem;line-height:1.5;min-height:56px}
