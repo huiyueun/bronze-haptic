@@ -95,3 +95,21 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 #top-nav button[data-preview=true]{outline:3px dashed var(--blue);outline-offset:1px}
 .feeling #top-nav button[data-preview=true]{outline-color:var(--gold)}
 @media(max-width:650px){#menu-description{left:12px;right:12px;bottom:calc(170px + env(safe-area-inset-bottom));max-width:none;max-height:28svh}}
+
+/* Focused observation and exploration layout. Keep the stage unchanged between modes. */
+#top-nav{inset:68px 12px auto;width:auto;max-height:100px;height:auto;padding:0;border:0;border-radius:0;background:transparent;overflow:visible;display:block}
+#types{display:flex;flex-direction:row;justify-content:center;gap:12px;height:auto;flex-basis:auto}
+#types button{padding:10px 14px;min-height:48px;text-align:center;font-size:1rem;white-space:normal}
+#types button[aria-current=true]:after{left:25%;right:25%;top:auto;bottom:2px;width:auto;height:3px}
+#feel-entry{position:absolute;left:16px;right:16px;bottom:max(16px,env(safe-area-inset-bottom));width:calc(100% - 32px);min-height:52px;padding:12px 16px;z-index:5;font-size:1rem}
+#fullscreen,#about{position:absolute;top:max(12px,env(safe-area-inset-top));bottom:auto;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--paper);color:var(--ink);z-index:6;font-size:25px}
+#about{right:max(12px,env(safe-area-inset-right))}#fullscreen{right:calc(max(12px,env(safe-area-inset-right)) + 56px)}
+#stage{inset:146px 8px calc(138px + env(safe-area-inset-bottom))}
+.signal{left:7%;right:7%;bottom:calc(82px + env(safe-area-inset-bottom))}#pattern{height:38px}
+#feel-panel{left:16px;right:16px;width:auto;bottom:max(16px,env(safe-area-inset-bottom));transform:none}
+#feel-exit{width:100%;min-height:52px}#feel-status{max-height:24svh;overflow:auto}
+.feeling #top-nav,.feeling #feel-entry,.feeling #fullscreen,.feeling #about,.feeling #menu-description{display:none!important}
+#menu-description{left:16px;right:16px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:none;max-height:28svh}
+#feel-entry[data-preview=true],#fullscreen[data-preview=true]{outline:3px dashed var(--blue);outline-offset:2px}
+@media(max-width:650px){#types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}#types button{padding:8px 4px;line-height:1.5;word-break:keep-all}#top-nav{left:8px;right:8px}}
+@media(max-height:480px){#top-nav{inset:8px 120px auto 8px}#types button{padding:4px;min-height:44px}#stage{top:84px;bottom:110px}#feel-entry,#feel-exit{min-height:44px;padding:8px}.signal{bottom:66px}#pattern{height:28px}}

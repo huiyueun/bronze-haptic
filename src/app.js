@@ -98,7 +98,7 @@ async function start(){if(busy)return;if(enabled){$('#activation').close();retur
  if(!audioReady){status('소리를 시작할 수 없습니다. 브라우저 소리 설정을 확인해 주세요.');return;}
  try{await Promise.all(TYPES.map((_,i)=>loadSamples(i)));}catch{status('음원을 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.');return;}if(generation!==sensorGeneration||document.hidden)return;status('');
  if(!window.isSecureContext){status('흔들림 감지는 HTTPS 주소에서 사용하세요.');return;}
- if(motionPermission!=='granted'){status('동작 센서 권한이 허용되지 않았습니다. 브라우저 설정에서 허용한 뒤 화면을 터치하세요.');return;}
+ if(motionPermission!=='granted'){$('#activation').close();status('동작 센서 권한이 허용되지 않았습니다. 3D 관찰과 손끝탐색은 사용할 수 있습니다.');return;}
  if(!window.DeviceMotionEvent){$('#activation').close();status('이 기기는 동작 센서가 없습니다. 유물을 가로로 돌려볼 수 있어요.');return;}
  enabled=true;sensorSeen=false;orientationAvailable=false;motion.reset();$('#activation').close();window.addEventListener('devicemotion',onMotion);if(orientationPermission==='granted')window.addEventListener('deviceorientation',onOrientation);
  status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)status('센서 값이 들어오지 않습니다. 휴대폰에서 센서 권한을 확인해 주세요.');},3500);wake();
@@ -112,24 +112,24 @@ stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercance
 stage.addEventListener('keydown',e=>{if(tactile?.isActive())return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();if(objects[selected])objects[selected].userData.yaw+=(e.key==='ArrowRight'?1:-1)*.15;wake();}});
 $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
 // First activation describes a control; the next activation of that control executes it.
-const menuRoot=$('#top-nav'),menuNote=document.createElement('p');
+const menuRoot=$('#experience'),menuNote=document.createElement('p');
 menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
 function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
-menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||button.disabled||!e.isTrusted)return;
+menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||!button.matches('#types button,#feel-entry,#fullscreen')||button.disabled||!e.isTrusted)return;
  if(pendingMenu===button){clearMenuPreview();return;}
  e.preventDefault();e.stopImmediatePropagation();clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
  const description=button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'손끝탐색 종료. 유물을 다시 돌려볼 수 있습니다.':'손끝탐색. 지금 보이는 윤곽과 주요 지점의 설명을 탐색합니다.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.');
  const message=description+' 같은 버튼을 한 번 더 누르면 실행합니다.';menuNote.hidden=false;menuNote.textContent=message;
  if('speechSynthesis' in window&&typeof SpeechSynthesisUtterance==='function'){window.speechSynthesis.cancel();menuSpeech=new SpeechSynthesisUtterance(message);menuSpeech.lang='ko-KR';menuSpeech.rate=.95;window.speechSynthesis.speak(menuSpeech);}
 },true);
-document.addEventListener('pointerdown',e=>{if(!menuRoot.contains(e.target))clearMenuPreview();});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('#types,#feel-entry,#fullscreen'))clearMenuPreview();});
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPreview();});
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
 $('#fullscreen').onclick=async()=>{const root=$('#experience');try{if(document.fullscreenElement)await document.exitFullscreen();else if(root.classList.contains('immersive'))root.classList.remove('immersive');else if(root.requestFullscreen)await root.requestFullscreen();else{root.classList.add('immersive');status('화면 확장 모드 · 이 브라우저는 시스템 전체화면을 지원하지 않습니다.');}}catch{root.classList.toggle('immersive');status('화면 확장 모드로 전환했습니다.');}syncFullscreen();};
-function syncFullscreen(){const active=!!document.fullscreenElement||$('#experience').classList.contains('immersive');$('#fullscreen').setAttribute('aria-label',active?'전체화면 종료':'전체화면');$('#fullscreen').textContent=active?'전체화면 종료':'전체화면';$('#fullscreen').setAttribute('aria-pressed',String(active));resize();}document.addEventListener('fullscreenchange',syncFullscreen);
+function syncFullscreen(){const active=!!document.fullscreenElement||$('#experience').classList.contains('immersive');$('#fullscreen').setAttribute('aria-label',active?'전체화면 종료':'전체화면');$('#fullscreen').textContent=active?'⊡':'⛶';$('#fullscreen').title=active?'전체화면 종료':'전체화면';$('#fullscreen').setAttribute('aria-pressed',String(active));resize();}document.addEventListener('fullscreenchange',syncFullscreen);
 $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info').onclick=()=>$('#info').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensors();audioContext?.suspend();if(frame)cancelAnimationFrame(frame);frame=0;}else{wake();if(!$('#activation').open)$('#activation').showModal();}});window.addEventListener('pagehide',()=>stopSensors());
 setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(1))));wake();
@@ -140,6 +140,6 @@ if(renderer)tactile=setupTactile({renderer,camera,getRoot:()=>objects[selected],
  restore:()=>{objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
 });
 
-$('#feel-without-sensors').onclick=()=>{$('#activation').close();$('#feel-entry').click();};
+
 $('#activation').addEventListener('cancel',e=>e.preventDefault());
 $('#activation').showModal();
