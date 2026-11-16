@@ -146,7 +146,7 @@ menuRoot.addEventListener('click',async e=>{const button=e.target.closest('butto
  if(button.id==='feel-exit')button.before(menuNote);
  if(button.id==='close-info')$('#info-title').after(menuNote);
  const name=button.dataset.index!==undefined?TYPES[Number(button.dataset.index)].name:(button.getAttribute('aria-label')||button.textContent.trim());
- menuNote.hidden=false;menuNote.textContent=name;speakMenu(name,true);
+ menuNote.hidden=button.id==='feel-exit';menuNote.textContent=button.id==='feel-exit'?'':name;speakMenu(name,true);
 },true);
 document.addEventListener('pointerdown',e=>{if(!e.target.closest(previewControls))clearMenuPreview();});
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
