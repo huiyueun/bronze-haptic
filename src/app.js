@@ -86,9 +86,11 @@ function impact(energy,tilt){if(document.hidden||!audioContext||audioContext.sta
  const timer=setTimeout(()=>{timers.delete(timer);try{const accepted=navigator.vibrate?.(vibrationPattern(plan));if(accepted===false)status('소리 재생 중 · 진동이 차단되어 있습니다. 기기 설정을 확인하세요.');}catch{}},12);timers.add(timer);
  energyVisual=Math.max(energyVisual,energy);wake();}
 function drawPattern(now){const c=$('#pattern'),w=c.clientWidth,h=c.clientHeight,dpr=Math.min(devicePixelRatio,2);if(c.width!==w*dpr||c.height!==h*dpr){c.width=w*dpr;c.height=h*dpr;}const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.strokeStyle='#7a7e82';g.lineWidth=1;g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.stroke();pulses=pulses.filter(p=>now-p.at<3500);g.strokeStyle='#26488c';g.lineWidth=2.5;g.beginPath();for(let x=0;x<w;x++){const time=now-(1-x/w)*3500;let amp=0;for(const p of pulses){const age=time-p.at;if(age>=0&&age<400)amp+=p.amp*Math.exp(-age/100)*Math.sin(age*.17);}const y=h/2-clamp(amp,-1,1)*(h*.4);x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();for(const p of pulses){const x=w*(1-(now-p.at)/3500);if(x<0||x>w)continue;g.fillStyle='#79501d';g.fillRect(x,h/2-2,Math.max(2,p.duration/3500*w),4);}}
-function onMotion(e){if(!enabled||document.hidden||tactile?.isActive())return;const reading=motion.sample(e,performance.now());if(!reading)return;lastSensorAt=performance.now();const raw=e.accelerationIncludingGravity;const ax=Number.isFinite(e.acceleration?.x)?e.acceleration.x:(raw?.x||0)-(motion.gravity?.x||0);const ay=Number.isFinite(e.acceleration?.y)?e.acceleration.y:(raw?.y||0)-(motion.gravity?.y||0);const strength=v=>Math.sign(v)*Math.pow(Math.abs(clamp(v/18,-1,1)),1.3);swayTargetX=strength(ax);swayTargetY=strength(ay);if(Math.abs(swayTargetX)+Math.abs(swayTargetY)+Math.abs(swayX)+Math.abs(swayY)>.002)wake();if(!sensorSeen){sensorSeen=true;clearTimeout(sensorTimer);status('');}if(orientationAvailable)motion.tilt=lastOrientation;if(reading.energy>0)impact(reading.energy,motion.tilt);}
+function onMotion(e){if(!enabled||document.hidden||tactile?.isActive())return;const reading=motion.sample(e,performance.now());if(!reading)return;lastSensorAt=performance.now();const raw=e.accelerationIncludingGravity;const ax=Number.isFinite(e.acceleration?.x)?e.acceleration.x:(raw?.x||0)-(motion.gravity?.x||0);const ay=Number.isFinite(e.acceleration?.y)?e.acceleration.y:(raw?.y||0)-(motion.gravity?.y||0);const strength=v=>Math.sign(v)*Math.pow(Math.abs(clamp(v/18,-1,1)),1.3);swayTargetX=strength(ax);swayTargetY=strength(ay);if(Math.abs(swayTargetX)+Math.abs(swayTargetY)+Math.abs(swayX)+Math.abs(swayY)>.002)wake();if(!sensorSeen){sensorSeen=true;clearTimeout(sensorTimer);sensorNotice();status('');}if(orientationAvailable)motion.tilt=lastOrientation;if(reading.energy>0)impact(reading.energy,motion.tilt);}
 function onOrientation(e){if(!enabled||tactile?.isActive()||!Number.isFinite(e.gamma))return;orientationAvailable=true;lastOrientation=clamp(e.gamma/90,-1,1);motion.tilt=lastOrientation;}
 function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);$('#start').disabled=false;motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
+function sensorNotice(text=''){const note=$('#sensor-note');note.textContent=text|| (typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');note.hidden=!note.textContent;}
+sensorNotice();
 async function start(){if(busy)return;if(enabled){void enterFullscreen();$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
@@ -98,10 +100,10 @@ async function start(){if(busy)return;if(enabled){void enterFullscreen();$('#act
  if(!audioReady){status('소리를 시작할 수 없습니다. 브라우저 소리 설정을 확인해 주세요.');return;}
  try{await Promise.all(TYPES.map((_,i)=>loadSamples(i)));}catch{status('음원을 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.');return;}if(generation!==sensorGeneration||document.hidden)return;status('');
  if(!window.isSecureContext){status('흔들림 감지는 HTTPS 주소에서 사용하세요.');return;}
- if(motionPermission!=='granted'){$('#activation').close();status('동작 센서 권한이 허용되지 않았습니다. 유물 관찰과 유물 살펴보기는 사용할 수 있습니다.');return;}
- if(!window.DeviceMotionEvent){$('#activation').close();status('이 기기는 동작 센서가 없습니다. 유물을 가로로 돌려볼 수 있어요.');return;}
+ if(motionPermission!=='granted'){$('#activation').close();sensorNotice('*동작 센서 권한 미허용');return;}
+ if(!window.DeviceMotionEvent){$('#activation').close();sensorNotice('*동작 센서 미지원 기기');return;}
  enabled=true;sensorSeen=false;orientationAvailable=false;motion.reset();$('#activation').close();window.addEventListener('devicemotion',onMotion);if(orientationPermission==='granted')window.addEventListener('deviceorientation',onOrientation);
- status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)status('센서 값이 들어오지 않습니다. 휴대폰에서 센서 권한을 확인해 주세요.');},3500);wake();
+ status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)sensorNotice('*동작 센서 연결 안 됨');},3500);wake();
  }catch{status('센서를 시작하지 못했습니다. 화면을 터치해 다시 시도하세요.');}finally{busy=false;$('#start').disabled=false;}}
 $('#start').onclick=start;
 // Horizontal drag changes only the object's yaw; vertical dragging never tilts it.
@@ -114,6 +116,7 @@ $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRi
 // First activation reads only the name; the next executes the control and reads its description.
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
 menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
+new ResizeObserver(()=>{if(tactile?.isActive())return;const height=menuNote.parentElement===menuRoot&&!menuNote.hidden?menuNote.getBoundingClientRect().height:0;menuRoot.style.setProperty('--caption-height',Math.max(96,height)+'px');resize();}).observe(menuNote);
 const previewControls='#types button,#feel-entry,#fullscreen,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];

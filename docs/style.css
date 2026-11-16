@@ -141,3 +141,11 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 
 /* Main captions match the scale of artifact explanations. */
 #experience > #menu-description{font-size:1.375rem;font-weight:500;line-height:1.65;text-align:center;border:0;border-radius:0;background:transparent;padding:12px 16px;overflow-wrap:anywhere;word-break:keep-all}
+
+/* Separate the response strip from the caption and keep capability notes quiet. */
+#experience{--caption-height:96px;--caption-bottom:calc(154px + env(safe-area-inset-bottom))}
+.signal{bottom:calc(var(--caption-bottom) + var(--caption-height) + 8px)}
+#stage{bottom:calc(var(--caption-bottom) + var(--caption-height) + 54px)}
+#sensor-note{position:absolute;top:max(16px,env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left));right:128px;margin:0;color:var(--muted,#515d6d);font-size:1rem;line-height:1.5;z-index:6;word-break:keep-all;pointer-events:none}
+.feeling #sensor-note{display:none}
+@media(max-height:480px){#experience{--caption-bottom:116px}#stage{bottom:calc(var(--caption-bottom) + var(--caption-height) + 34px)}}
