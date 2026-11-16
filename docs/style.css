@@ -113,3 +113,19 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 #feel-entry[data-preview=true],#fullscreen[data-preview=true]{outline:3px dashed var(--blue);outline-offset:2px}
 @media(max-width:650px){#types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}#types button{padding:8px 4px;line-height:1.5;word-break:keep-all}#top-nav{left:8px;right:8px}}
 @media(max-height:480px){#top-nav{inset:8px 120px auto 8px}#types button{padding:4px;min-height:44px}#stage{top:84px;bottom:110px}#feel-entry,#feel-exit{min-height:44px;padding:8px}.signal{bottom:66px}#pattern{height:28px}}
+
+/* Icon controls must not inherit text line-height or platform glyph metrics. */
+#close-info,#about,#fullscreen{box-sizing:border-box;appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-width:44px;max-width:44px;min-height:44px;max-height:44px;aspect-ratio:1;flex:none;padding:0;line-height:1;border-radius:50%;vertical-align:middle}
+#close-info svg,#about svg,#fullscreen svg{display:block;width:24px;height:24px;flex:none;pointer-events:none}
+#fullscreen .collapse-icon,#fullscreen[aria-pressed=true] .expand-icon{display:none}
+#fullscreen[aria-pressed=true] .collapse-icon{display:inline}
+
+/* Main screen: exploration action above artifact choices. */
+#top-nav{inset:auto 12px max(12px,env(safe-area-inset-bottom));max-height:72px;padding:0}
+#types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;max-width:720px;margin:0 auto}
+#types button{min-height:64px;padding:8px 4px;line-height:1.5;word-break:keep-all}
+#feel-entry{bottom:calc(92px + env(safe-area-inset-bottom))}
+#stage{inset:70px 8px calc(210px + env(safe-area-inset-bottom))}
+.signal{bottom:calc(154px + env(safe-area-inset-bottom))}
+#menu-description{bottom:calc(154px + env(safe-area-inset-bottom))}
+@media(max-height:480px){#types button{min-height:48px;padding:4px}#top-nav{bottom:8px}#feel-entry{bottom:64px}#stage{top:60px;bottom:146px}.signal{bottom:116px}#menu-description{bottom:116px}}
