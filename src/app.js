@@ -98,7 +98,7 @@ async function start(){if(busy)return;if(enabled){void enterFullscreen();$('#act
  if(!audioReady){status('소리를 시작할 수 없습니다. 브라우저 소리 설정을 확인해 주세요.');return;}
  try{await Promise.all(TYPES.map((_,i)=>loadSamples(i)));}catch{status('음원을 불러오지 못했습니다. 연결을 확인하고 다시 눌러 주세요.');return;}if(generation!==sensorGeneration||document.hidden)return;status('');
  if(!window.isSecureContext){status('흔들림 감지는 HTTPS 주소에서 사용하세요.');return;}
- if(motionPermission!=='granted'){$('#activation').close();status('동작 센서 권한이 허용되지 않았습니다. 3D 관찰과 손끝탐색은 사용할 수 있습니다.');return;}
+ if(motionPermission!=='granted'){$('#activation').close();status('동작 센서 권한이 허용되지 않았습니다. 유물 관찰과 유물 살펴보기는 사용할 수 있습니다.');return;}
  if(!window.DeviceMotionEvent){$('#activation').close();status('이 기기는 동작 센서가 없습니다. 유물을 가로로 돌려볼 수 있어요.');return;}
  enabled=true;sensorSeen=false;orientationAvailable=false;motion.reset();$('#activation').close();window.addEventListener('devicemotion',onMotion);if(orientationPermission==='granted')window.addEventListener('deviceorientation',onOrientation);
  status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)status('센서 값이 들어오지 않습니다. 휴대폰에서 센서 권한을 확인해 주세요.');},3500);wake();
@@ -120,7 +120,7 @@ function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pending
 menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||!button.matches('#types button,#feel-entry,#fullscreen')||button.disabled||!e.isTrusted)return;
  if(pendingMenu===button){clearMenuPreview();return;}
  e.preventDefault();e.stopImmediatePropagation();clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
- const description=button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'손끝탐색 종료. 유물을 다시 돌려볼 수 있습니다.':'손끝탐색. 지금 보이는 윤곽과 주요 지점의 설명을 탐색합니다.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.');
+ const description=button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.':'유물 살펴보기. 유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.');
  const message=description+' 같은 버튼을 한 번 더 누르면 실행합니다.';menuNote.hidden=false;menuNote.textContent=message;
  if('speechSynthesis' in window&&typeof SpeechSynthesisUtterance==='function'){window.speechSynthesis.cancel();menuSpeech=new SpeechSynthesisUtterance(message);menuSpeech.lang='ko-KR';menuSpeech.rate=.95;window.speechSynthesis.speak(menuSpeech);}
 },true);
