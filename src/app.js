@@ -111,22 +111,31 @@ function endDrag(e){if(drag?.id===e.pointerId)drag=null;}
 stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercancel',endDrag);stage.addEventListener('lostpointercapture',endDrag);
 stage.addEventListener('keydown',e=>{if(tactile?.isActive())return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();if(objects[selected])objects[selected].userData.yaw+=(e.key==='ArrowRight'?1:-1)*.15;wake();}});
 $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
-// First activation describes a control; the next activation of that control executes it.
+// First activation reads only the name; the next executes the control and reads its description.
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
 menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
 const previewControls='#types button,#feel-entry,#fullscreen,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
 function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';menuRoot.append(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
-menuRoot.addEventListener('click',e=>{const button=e.target.closest('button');if(!button||!button.matches(previewControls)||button.disabled||!e.isTrusted)return;
- if(pendingMenu===button){clearMenuPreview();return;}
- e.preventDefault();e.stopImmediatePropagation();clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
- const extraDescriptions={'feel-exit':'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.','about':'출처 정보. 유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'출처 정보 닫기. 유물 화면으로 돌아갑니다.'};
+function speakMenu(text,preview=false){
+ if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
+ window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.lang='ko-KR';utterance.rate=.95;
+ if(preview)menuSpeech=utterance;
+ window.speechSynthesis.speak(utterance);
+}
+menuRoot.addEventListener('click',async e=>{const button=e.target.closest('button');if(!button||!button.matches(previewControls)||button.disabled||!e.isTrusted)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ if(pendingMenu===button){
+  const extraDescriptions={'feel-exit':'유물을 다시 돌려보고 흔들 수 있습니다.','about':'유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'유물 화면으로 돌아갑니다.'};
+  const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?'유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.':(document.fullscreenElement||menuRoot.classList.contains('immersive')?'기본 화면으로 돌아갑니다.':'화면 전체로 유물을 표시합니다.'));
+  clearMenuPreview();await button.onclick?.call(button,e);speakMenu(description);return;
+ }
+ clearMenuPreview();pendingMenu=button;button.setAttribute('data-preview','true');
  if(button.id==='feel-exit')button.before(menuNote);
  if(button.id==='close-info')$('#info-title').after(menuNote);
- const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:button.id==='feel-entry'?(tactile?.isActive()?'돌아가기. 유물을 다시 돌려보고 흔들 수 있습니다.':'유물 살펴보기. 유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.'):(document.fullscreenElement||$('#experience').classList.contains('immersive')?'전체화면 종료. 기본 화면으로 돌아갑니다.':'전체화면. 뷰어를 화면 전체로 표시합니다.'));
- const message=description+' 같은 버튼을 한 번 더 누르면 실행합니다.';menuNote.hidden=false;menuNote.textContent=message;
- if('speechSynthesis' in window&&typeof SpeechSynthesisUtterance==='function'){window.speechSynthesis.cancel();menuSpeech=new SpeechSynthesisUtterance(message);menuSpeech.lang='ko-KR';menuSpeech.rate=.95;window.speechSynthesis.speak(menuSpeech);}
+ const name=button.dataset.index!==undefined?TYPES[Number(button.dataset.index)].name:(button.getAttribute('aria-label')||button.textContent.trim());
+ menuNote.hidden=false;menuNote.textContent=name;speakMenu(name,true);
 },true);
 document.addEventListener('pointerdown',e=>{if(!e.target.closest(previewControls))clearMenuPreview();});
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
