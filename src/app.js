@@ -98,7 +98,7 @@ function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sens
 function sensorNotice(text=''){const note=$('#sensor-note'),message=text||(typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');const changed=note.textContent!==message;note.textContent=message;note.hidden=!message;if(changed&&message)announceReader(message.replace(/^\*/,''));}
 sensorNotice();
 function setActivationBusy(value){document.querySelectorAll('#activation button').forEach(button=>button.disabled=value);}
-function chooseGuidance(screenReader){if(busy)return;screenReaderMode=screenReader;clearMenuPreview();window.speechSynthesis?.cancel();clearTimeout(readerTimer);document.querySelectorAll('.reader-announcement').forEach(note=>{note.textContent='';note.setAttribute('aria-live',screenReader?'polite':'off');});for(const note of [menuNote,$('#feel-status'),$('#status'),$('#sensor-note'),$('#activation-status')]){note.setAttribute('role','none');note.setAttribute('aria-live','off');}void start();}
+function configureGuidance(screenReader){if(busy)return;screenReaderMode=screenReader;clearMenuPreview();window.speechSynthesis?.cancel();clearTimeout(readerTimer);document.querySelectorAll('.reader-announcement').forEach(note=>{note.textContent='';note.setAttribute('aria-live',screenReader?'polite':'off');});for(const note of [menuNote,$('#feel-status'),$('#status'),$('#sensor-note'),$('#activation-status')]){note.setAttribute('role','none');note.setAttribute('aria-live','off');}}
 async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;setActivationBusy(true);const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
@@ -113,8 +113,19 @@ async function start(){if(busy)return;if(enabled){$('#activation').close();retur
  enabled=true;sensorSeen=false;orientationAvailable=false;motion.reset();$('#activation').close();window.addEventListener('devicemotion',onMotion);if(orientationPermission==='granted')window.addEventListener('deviceorientation',onOrientation);
  status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)sensorNotice('*동작 센서 연결 안 됨');},3500);wake();
  }catch{status('센서를 시작하지 못했습니다. 화면을 터치해 다시 시도하세요.');}finally{busy=false;setActivationBusy(false);}}
-$('#start').onclick=()=>chooseGuidance(false);
-$('#start-reader').onclick=()=>chooseGuidance(true);
+let pendingGuidance=null;
+function clearGuidancePreview(){pendingGuidance?.removeAttribute('data-preview');pendingGuidance=null;}
+function chooseGuidance(screenReader,button){
+ if(busy)return;
+ if(pendingGuidance===button){clearGuidancePreview();configureGuidance(screenReader);void start();return;}
+ clearGuidancePreview();configureGuidance(screenReader);pendingGuidance=button;button.setAttribute('data-preview','true');speakMenu(button.textContent.trim(),true);
+}
+$('#start').onclick=()=>chooseGuidance(false,$('#start'));
+$('#start-reader').onclick=()=>chooseGuidance(true,$('#start-reader'));
+$('#activation').addEventListener('focusout',e=>{if(pendingGuidance&&e.relatedTarget!==pendingGuidance)clearGuidancePreview();});
+$('#activation').addEventListener('pointerdown',e=>{if(!e.target.closest('button'))clearGuidancePreview();});
+$('#activation').addEventListener('close',clearGuidancePreview);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearGuidancePreview();});
 // Begin sequential navigation at the artifact menu after the entry dialog closes.
 let enteredOnce=false;
 $('#activation').addEventListener('close',()=>{const target=enteredOnce?nav.querySelector('[aria-current="true"]'):nav.querySelector('button');enteredOnce=true;target?.focus({preventScroll:true});if(screenReaderMode)announceReader('휴대폰을 가볍게 흔들어 소리와 진동을 느껴보세요. 하단에서 유물을 선택하고, 유물 살펴보기에서 각 부분의 설명을 확인할 수 있습니다.'+($('#sensor-note').textContent||'').replace(/^\*/,''));});
