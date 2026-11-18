@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createPartCommand} from './part-command.mjs';
 import {DOCENT} from './tactile-data.mjs';
 import {createTactileSound} from './tactile-sound.js';
 
@@ -65,11 +66,21 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore,is
    return {...p,x,y};});
   layer.replaceChildren();points.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=p.number;b.setAttribute('aria-label',`${p.number}. ${p.name}`);b.style.left=`${p.x/w*100}%`;b.style.top=`${p.y/h*100}%`;b.onclick=()=>{sound.unlock();selectPoint(p,isScreenReader()||chosen===p);};layer.append(b);});
  }
- function end(){if(!active)return;active=false;clearFeedback();pointer=null;chosen=null;points=[];mask=null;sound.reset();globalThis.speechSynthesis?.cancel();panel.hidden=true;canvas.hidden=true;layer.hidden=true;document.body.classList.remove('feeling');entry.setAttribute('aria-expanded','false');restore();renderer.domElement.closest('#stage').setAttribute('tabindex','0');renderer.domElement.closest('#stage').setAttribute('aria-describedby','stage-help');entry.focus({preventScroll:true});}
+ function end(){partCommand.reset();if(!active)return;active=false;clearFeedback();pointer=null;chosen=null;points=[];mask=null;sound.reset();globalThis.speechSynthesis?.cancel();panel.hidden=true;canvas.hidden=true;layer.hidden=true;document.body.classList.remove('feeling');entry.setAttribute('aria-expanded','false');restore();renderer.domElement.closest('#stage').setAttribute('tabindex','0');renderer.domElement.closest('#stage').setAttribute('aria-describedby','stage-help');entry.focus({preventScroll:true});}
  entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-expanded','true');try{layout();renderer.domElement.closest('#stage').setAttribute('tabindex','-1');renderer.domElement.closest('#stage').removeAttribute('aria-describedby');(layer.querySelector('button')||exit).focus({preventScroll:true});status.textContent='';}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';if(isScreenReader())announceReader(status.textContent);console.error(e);}};
  canvas.addEventListener('pointerdown',e=>{if(!active||pointer!==null)return;e.preventDefault();sound.unlock();globalThis.speechSynthesis?.cancel();pointer=e.pointerId;gesture++;canvas.setPointerCapture(pointer);contact(e);});
  canvas.addEventListener('pointermove',e=>{if(active&&pointer===e.pointerId){e.preventDefault();contact(e);}});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>{if(pointer!==e.pointerId)return;pointer=null;clearFeedback();if(event!=='pointerup'){globalThis.speechSynthesis?.cancel();chosen=null;}});
+ const partCommand=createPartCommand({isEnabled:()=>active&&!document.hidden&&!document.querySelector('dialog[open]'),onSelect:number=>{
+  const data=DOCENT[getIndex()]?.[number-1];if(!data)return;
+  const p=points.find(point=>point.number===number)||{...data,number};
+  clearFeedback();sound.unlock();chosen=p;
+  layer.querySelectorAll('button').forEach(b=>{const current=Number(b.textContent)===number;b.classList.toggle('selected',current);if(current)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});
+  speak(`${p.name}. ${p.text}`);
+ }});
+ // Capture the command's Enter before it can activate a focused button (e.g. exit).
+ window.addEventListener('keydown',partCommand.keydown,true);
+ window.addEventListener('blur',partCommand.reset);
  exit.onclick=end;addEventListener('keydown',e=>{if(active&&e.key==='Escape'){e.preventDefault();end();}});addEventListener('resize',()=>{if(active)end();});document.addEventListener('visibilitychange',()=>{if(document.hidden)end();});addEventListener('pagehide',end);
  return {isActive:()=>active,end};
 }
