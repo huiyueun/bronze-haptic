@@ -19,10 +19,10 @@ export function fitAnchors(root,index){
  });
  anchorCache.set(root,anchors);return fitAnchors(root,index);
 }
-export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore,isScreenReader=()=>false}){
+export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore,isScreenReader=()=>false,announceReader=()=>{}}){
  const entry=document.querySelector('#feel-entry'),exit=document.querySelector('#feel-exit'),panel=document.querySelector('#feel-panel'),canvas=document.querySelector('#feel-canvas'),layer=document.querySelector('#feel-points'),status=document.querySelector('#feel-status'),ctx=canvas.getContext('2d');
  const sound=createTactileSound();let speechId=0;let active=false,mask=null,w=0,h=0,points=[],pointer=null,inside=false,timer=null,cue=null,chosen=null,arrived=null,gesture=0,lastSpokenGesture=-1,last=null;
- function speak(text){status.textContent=text;if(isScreenReader()||!globalThis.speechSynthesis)return;const id=++speechId;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=.95;u.onerror=e=>{if(id===speechId&&active&&!['interrupted','canceled'].includes(e.error))status.textContent=text+' (음성 재생 불가 · 글로 확인해 주세요)';};speechSynthesis.speak(u);}
+ function speak(text){status.textContent=text;if(isScreenReader()){announceReader(text);return;}if(!globalThis.speechSynthesis)return;const id=++speechId;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=.95;u.onerror=e=>{if(id===speechId&&active&&!['interrupted','canceled'].includes(e.error))status.textContent=text+' (음성 재생 불가 · 글로 확인해 주세요)';};speechSynthesis.speak(u);}
  function vibrate(p){try{navigator.vibrate?.(p);}catch{}}
  function clearFeedback(){clearTimeout(timer);clearTimeout(cue);timer=cue=null;vibrate(0);sound.stop();inside=false;last=null;arrived=null;canvas.classList.remove('contact');}
  function pulse(){if(!active||!inside||pointer===null||document.hidden)return;vibrate([60,65,60,65,60]);timer=setTimeout(pulse,350);}
@@ -36,7 +36,7 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore,is
   last={x,y};let p=null,d=Infinity;for(const q of points){const dist=Math.hypot(q.x-x,q.y-y);if(dist<d){p=q;d=dist;}}
   if(!within||d>24)p=null;
   if(p){if(arrived!==p&&(lastSpokenGesture!==gesture||chosen!==p)){selectPoint(p,isScreenReader()||(chosen===p&&lastSpokenGesture!==gesture));lastSpokenGesture=gesture;}arrived=p;clearTimeout(cue);cue=null;}
-  else{arrived=null;if(!cue)proximity();if(!globalThis.speechSynthesis?.speaking)status.textContent='';}
+  else{arrived=null;if(!cue)proximity();if(!isScreenReader()&&!globalThis.speechSynthesis?.speaking)status.textContent='';}
  }
  function layout(){
   const root=getRoot(),r=renderer.domElement.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));canvas.width=w;canvas.height=h;
@@ -66,7 +66,7 @@ export function setupTactile({renderer,camera,getRoot,getIndex,freeze,restore,is
   layer.replaceChildren();points.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.textContent=p.number;b.setAttribute('aria-label',`${p.number}. ${p.name}`);b.style.left=`${p.x/w*100}%`;b.style.top=`${p.y/h*100}%`;b.onclick=()=>{sound.unlock();selectPoint(p,isScreenReader()||chosen===p);};layer.append(b);});
  }
  function end(){if(!active)return;active=false;clearFeedback();pointer=null;chosen=null;points=[];mask=null;sound.reset();globalThis.speechSynthesis?.cancel();panel.hidden=true;canvas.hidden=true;layer.hidden=true;document.body.classList.remove('feeling');entry.setAttribute('aria-pressed','false');restore();renderer.domElement.closest('#stage').setAttribute('tabindex','0');entry.focus({preventScroll:true});}
- entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-pressed','true');try{layout();renderer.domElement.closest('#stage').setAttribute('tabindex','-1');(layer.querySelector('button')||exit).focus({preventScroll:true});status.textContent='';}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';console.error(e);}};
+ entry.onclick=()=>{if(active){end();return;}if(!getRoot()?.userData.loaded)return;sound.unlock();active=true;document.body.classList.add('feeling');freeze();chosen=null;gesture=0;lastSpokenGesture=-1;panel.hidden=canvas.hidden=layer.hidden=false;document.body.classList.add('feeling');entry.setAttribute('aria-pressed','true');try{layout();renderer.domElement.closest('#stage').setAttribute('tabindex','-1');(layer.querySelector('button')||exit).focus({preventScroll:true});status.textContent='';}catch(e){end();status.textContent='탐색을 준비하지 못했습니다. 다시 시도해 주세요.';if(isScreenReader())announceReader(status.textContent);console.error(e);}};
  canvas.addEventListener('pointerdown',e=>{if(!active||pointer!==null)return;e.preventDefault();sound.unlock();globalThis.speechSynthesis?.cancel();pointer=e.pointerId;gesture++;canvas.setPointerCapture(pointer);contact(e);});
  canvas.addEventListener('pointermove',e=>{if(active&&pointer===e.pointerId){e.preventDefault();contact(e);}});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>{if(pointer!==e.pointerId)return;pointer=null;clearFeedback();if(event!=='pointerup'){globalThis.speechSynthesis?.cancel();chosen=null;}});

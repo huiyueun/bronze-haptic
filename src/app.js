@@ -9,8 +9,14 @@ const $=s=>document.querySelector(s),stage=$('#stage'),host=$('#webgl');
 let selected=0,enabled=false,busy=false,sensorSeen=false,sensorTimer=0,audioContext,master,compressor,rotating=false;
 let energyVisual=0,lastFrame=0,frame=0,scene,renderer,camera,orbit,objects=[],drag=null,pulses=[],timers=new Set(),voices=new Set();
 let lastOrientation=0,orientationAvailable=false,motion=new MotionTracker(),sensorGeneration=0,slide=null;
-let statusTimer,tactile,screenReaderMode=false;
-const status=text=>{const note=$('#activation-status');if(note)note.textContent=text;const el=$('#status');el.textContent=text;el.hidden=!text;clearTimeout(statusTimer);if(text)statusTimer=setTimeout(()=>el.hidden=true,5500);};
+let statusTimer,tactile,screenReaderMode=false,readerTimer;
+function announceReader(text){
+ if(!screenReaderMode||!text)return;
+ const dialog=document.querySelector('dialog[open]');const region=dialog?dialog.querySelector('.reader-announcement'):document.querySelector('#experience > .reader-announcement');if(!region)return;
+ clearTimeout(readerTimer);region.textContent='';
+ readerTimer=setTimeout(()=>{if(screenReaderMode&&(!dialog||dialog.open))region.textContent=text;},100);
+}
+const status=text=>{const note=$('#activation-status');if(note)note.textContent=text;const el=$('#status');el.textContent=text;el.hidden=!text;clearTimeout(statusTimer);if(text){announceReader(text);statusTimer=setTimeout(()=>el.hidden=true,5500);}};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const nav=$('#types');
 TYPES.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.name;if(t.name==='조합식쌍두령')b.replaceChildren(document.createTextNode('조합식'),document.createElement('wbr'),document.createTextNode('쌍두령'));b.dataset.index=i;b.onclick=()=>select(i);nav.append(b);});
@@ -89,10 +95,10 @@ function drawPattern(now){const c=$('#pattern'),w=c.clientWidth,h=c.clientHeight
 function onMotion(e){if(!enabled||document.hidden||tactile?.isActive())return;const reading=motion.sample(e,performance.now());if(!reading)return;lastSensorAt=performance.now();const raw=e.accelerationIncludingGravity;const ax=Number.isFinite(e.acceleration?.x)?e.acceleration.x:(raw?.x||0)-(motion.gravity?.x||0);const ay=Number.isFinite(e.acceleration?.y)?e.acceleration.y:(raw?.y||0)-(motion.gravity?.y||0);const strength=v=>Math.sign(v)*Math.pow(Math.abs(clamp(v/18,-1,1)),1.3);swayTargetX=strength(ax);swayTargetY=strength(ay);if(Math.abs(swayTargetX)+Math.abs(swayTargetY)+Math.abs(swayX)+Math.abs(swayY)>.002)wake();if(!sensorSeen){sensorSeen=true;clearTimeout(sensorTimer);sensorNotice();status('');}if(orientationAvailable)motion.tilt=lastOrientation;if(reading.energy>0)impact(reading.energy,motion.tilt);}
 function onOrientation(e){if(!enabled||tactile?.isActive()||!Number.isFinite(e.gamma))return;orientationAvailable=true;lastOrientation=clamp(e.gamma/90,-1,1);motion.tilt=lastOrientation;}
 function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);setActivationBusy(false);motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
-function sensorNotice(text=''){const note=$('#sensor-note');note.textContent=text|| (typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');note.hidden=!note.textContent;}
+function sensorNotice(text=''){const note=$('#sensor-note'),message=text||(typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');const changed=note.textContent!==message;note.textContent=message;note.hidden=!message;if(changed&&message)announceReader(message.replace(/^\*/,''));}
 sensorNotice();
 function setActivationBusy(value){document.querySelectorAll('#activation button').forEach(button=>button.disabled=value);}
-function chooseGuidance(screenReader){if(busy)return;screenReaderMode=screenReader;clearMenuPreview();window.speechSynthesis?.cancel();for(const note of [menuNote,$('#feel-status')]){note.setAttribute('role',screenReader?'status':'none');note.setAttribute('aria-live',screenReader?'polite':'off');note.setAttribute('aria-atomic','true');}void start();}
+function chooseGuidance(screenReader){if(busy)return;screenReaderMode=screenReader;clearMenuPreview();window.speechSynthesis?.cancel();clearTimeout(readerTimer);document.querySelectorAll('.reader-announcement').forEach(note=>{note.textContent='';note.setAttribute('aria-live',screenReader?'polite':'off');});for(const note of [menuNote,$('#feel-status'),$('#status'),$('#sensor-note'),$('#activation-status')]){note.setAttribute('role','none');note.setAttribute('aria-live','off');}void start();}
 async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;setActivationBusy(true);const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
@@ -111,7 +117,7 @@ $('#start').onclick=()=>chooseGuidance(false);
 $('#start-reader').onclick=()=>chooseGuidance(true);
 // Begin sequential navigation at the artifact menu after the entry dialog closes.
 let enteredOnce=false;
-$('#activation').addEventListener('close',()=>{const target=enteredOnce?nav.querySelector('[aria-current="true"]'):nav.querySelector('button');enteredOnce=true;target?.focus({preventScroll:true});});
+$('#activation').addEventListener('close',()=>{const target=enteredOnce?nav.querySelector('[aria-current="true"]'):nav.querySelector('button');enteredOnce=true;target?.focus({preventScroll:true});if(screenReaderMode)announceReader('휴대폰을 가볍게 흔들어 소리와 진동을 느껴보세요. 하단에서 유물을 선택하고, 유물 살펴보기에서 각 부분의 설명을 확인할 수 있습니다.'+($('#sensor-note').textContent||'').replace(/^\*/,''));});
 // Horizontal drag changes only the object's yaw; vertical dragging never tilts it.
 stage.addEventListener('pointerdown',e=>{if(tactile?.isActive()||e.button!==0||drag)return;drag={id:e.pointerId,x:e.clientX,yaw:objects[selected]?.userData.yaw||0};stage.setPointerCapture(e.pointerId);});
 stage.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const g=objects[selected];if(g){g.userData.yaw=drag.yaw+(e.clientX-drag.x)*.009;wake();}});
@@ -121,7 +127,7 @@ stage.addEventListener('keydown',e=>{if(tactile?.isActive())return;if(e.key==='A
 $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
 // First activation reads only the name; the next executes the control and reads its description.
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
-menuNote.id='menu-description';menuNote.setAttribute('role','status');menuNote.setAttribute('aria-live','polite');menuNote.hidden=true;$('#experience').append(menuNote);
+menuNote.id='menu-description';menuNote.setAttribute('role','none');menuNote.setAttribute('aria-live','off');menuNote.hidden=true;$('#experience').append(menuNote);
 new ResizeObserver(()=>{if(tactile?.isActive())return;const height=menuNote.parentElement===menuRoot&&!menuNote.hidden?menuNote.getBoundingClientRect().height:0;menuRoot.style.setProperty('--caption-height',Math.max(96,height)+'px');resize();}).observe(menuNote);
 const previewControls='#types button,#feel-entry,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
@@ -133,7 +139,8 @@ function placeMenuNote(){
  else menuRoot.append(menuNote);
 }
 function speakMenu(text,preview=false){
- if(screenReaderMode||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
+ if(screenReaderMode){announceReader(text);return;}
+ if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
  window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.lang='ko-KR';utterance.rate=.95;
  if(preview)menuSpeech=utterance;
  window.speechSynthesis.speak(utterance);
@@ -151,7 +158,7 @@ menuRoot.addEventListener('click',async e=>{const button=e.target.closest('butto
  const name=button.dataset.index!==undefined?TYPES[Number(button.dataset.index)].name:(button.getAttribute('aria-label')||button.textContent.trim());
  menuNote.hidden=button.id==='feel-exit';menuNote.textContent=button.id==='feel-exit'?'':name;speakMenu(name,true);
 },true);
-document.addEventListener('pointerdown',e=>{if(!e.target.closest(previewControls))clearMenuPreview();});
+document.addEventListener('pointerdown',e=>{if(!screenReaderMode&&!e.target.closest(previewControls))clearMenuPreview();});
 menuRoot.addEventListener('focusout',e=>{if(pendingMenu&&e.relatedTarget!==pendingMenu)clearMenuPreview();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMenuPreview();});
 menuRoot.addEventListener('keydown',e=>{if(e.key==='Escape')clearMenuPreview();});
@@ -161,7 +168,7 @@ $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info'
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensors();audioContext?.suspend();if(frame)cancelAnimationFrame(frame);frame=0;}else{wake();if(!$('#activation').open)$('#activation').showModal();}});window.addEventListener('pagehide',()=>stopSensors());
 setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(1))));wake();
 
-if(renderer)tactile=setupTactile({renderer,camera,isScreenReader:()=>screenReaderMode,getRoot:()=>objects[selected],getIndex:()=>selected,
+if(renderer)tactile=setupTactile({renderer,camera,isScreenReader:()=>screenReaderMode,announceReader:text=>{clearMenuPreview();announceReader(text);},getRoot:()=>objects[selected],getIndex:()=>selected,
  freeze:()=>{clearTimeout(sensorTimer);status('');stopSound();motion.reset();drag=null;slide=null;swayX=swayY=swayTargetX=swayTargetY=0;
   objects.forEach((o,i)=>{o.visible=i===selected;});renderer.render(scene,camera);},
  restore:()=>{objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
