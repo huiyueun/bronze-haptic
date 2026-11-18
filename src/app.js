@@ -9,7 +9,7 @@ const $=s=>document.querySelector(s),stage=$('#stage'),host=$('#webgl');
 let selected=0,enabled=false,busy=false,sensorSeen=false,sensorTimer=0,audioContext,master,compressor,rotating=false;
 let energyVisual=0,lastFrame=0,frame=0,scene,renderer,camera,orbit,objects=[],drag=null,pulses=[],timers=new Set(),voices=new Set();
 let lastOrientation=0,orientationAvailable=false,motion=new MotionTracker(),sensorGeneration=0,slide=null;
-let statusTimer,tactile;
+let statusTimer,tactile,screenReaderMode=false;
 const status=text=>{const note=$('#activation-status');if(note)note.textContent=text;const el=$('#status');el.textContent=text;el.hidden=!text;clearTimeout(statusTimer);if(text)statusTimer=setTimeout(()=>el.hidden=true,5500);};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const nav=$('#types');
@@ -88,10 +88,12 @@ function impact(energy,tilt){if(document.hidden||!audioContext||audioContext.sta
 function drawPattern(now){const c=$('#pattern'),w=c.clientWidth,h=c.clientHeight,dpr=Math.min(devicePixelRatio,2);if(c.width!==w*dpr||c.height!==h*dpr){c.width=w*dpr;c.height=h*dpr;}const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.strokeStyle='#7a7e82';g.lineWidth=1;g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.stroke();pulses=pulses.filter(p=>now-p.at<3500);g.strokeStyle='#26488c';g.lineWidth=2.5;g.beginPath();for(let x=0;x<w;x++){const time=now-(1-x/w)*3500;let amp=0;for(const p of pulses){const age=time-p.at;if(age>=0&&age<400)amp+=p.amp*Math.exp(-age/100)*Math.sin(age*.17);}const y=h/2-clamp(amp,-1,1)*(h*.4);x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();for(const p of pulses){const x=w*(1-(now-p.at)/3500);if(x<0||x>w)continue;g.fillStyle='#79501d';g.fillRect(x,h/2-2,Math.max(2,p.duration/3500*w),4);}}
 function onMotion(e){if(!enabled||document.hidden||tactile?.isActive())return;const reading=motion.sample(e,performance.now());if(!reading)return;lastSensorAt=performance.now();const raw=e.accelerationIncludingGravity;const ax=Number.isFinite(e.acceleration?.x)?e.acceleration.x:(raw?.x||0)-(motion.gravity?.x||0);const ay=Number.isFinite(e.acceleration?.y)?e.acceleration.y:(raw?.y||0)-(motion.gravity?.y||0);const strength=v=>Math.sign(v)*Math.pow(Math.abs(clamp(v/18,-1,1)),1.3);swayTargetX=strength(ax);swayTargetY=strength(ay);if(Math.abs(swayTargetX)+Math.abs(swayTargetY)+Math.abs(swayX)+Math.abs(swayY)>.002)wake();if(!sensorSeen){sensorSeen=true;clearTimeout(sensorTimer);sensorNotice();status('');}if(orientationAvailable)motion.tilt=lastOrientation;if(reading.energy>0)impact(reading.energy,motion.tilt);}
 function onOrientation(e){if(!enabled||tactile?.isActive()||!Number.isFinite(e.gamma))return;orientationAvailable=true;lastOrientation=clamp(e.gamma/90,-1,1);motion.tilt=lastOrientation;}
-function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);$('#start').disabled=false;motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
+function stopSensors(message){sensorGeneration++;enabled=false;clearTimeout(sensorTimer);window.removeEventListener('devicemotion',onMotion);window.removeEventListener('deviceorientation',onOrientation);setActivationBusy(false);motion.reset();swayTargetX=swayTargetY=0;stopSound();if(message)status(message);}
 function sensorNotice(text=''){const note=$('#sensor-note');note.textContent=text|| (typeof navigator.vibrate!=='function'?'*진동 미지원 기기':'');note.hidden=!note.textContent;}
 sensorNotice();
-async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;$('#start').disabled=true;const generation=++sensorGeneration;
+function setActivationBusy(value){document.querySelectorAll('#activation button').forEach(button=>button.disabled=value);}
+function chooseGuidance(screenReader){if(busy)return;screenReaderMode=screenReader;clearMenuPreview();window.speechSynthesis?.cancel();for(const note of [menuNote,$('#feel-status')]){note.setAttribute('role',screenReader?'status':'none');note.setAttribute('aria-live',screenReader?'polite':'off');note.setAttribute('aria-atomic','true');}void start();}
+async function start(){if(busy)return;if(enabled){$('#activation').close();return;}busy=true;setActivationBusy(true);const generation=++sensorGeneration;
  try{
  // Request both permissions within this click's transient activation, before awaiting audio.
  const requests=[window.DeviceMotionEvent,window.DeviceOrientationEvent].map(API=>typeof API?.requestPermission==='function'?API.requestPermission().catch(()=>'denied'):Promise.resolve('granted'));
@@ -104,8 +106,9 @@ async function start(){if(busy)return;if(enabled){$('#activation').close();retur
  if(!window.DeviceMotionEvent){$('#activation').close();sensorNotice('*동작 센서 미지원 기기');return;}
  enabled=true;sensorSeen=false;orientationAvailable=false;motion.reset();$('#activation').close();window.addEventListener('devicemotion',onMotion);if(orientationPermission==='granted')window.addEventListener('deviceorientation',onOrientation);
  status('');sensorTimer=setTimeout(()=>{if(enabled&&!sensorSeen)sensorNotice('*동작 센서 연결 안 됨');},3500);wake();
- }catch{status('센서를 시작하지 못했습니다. 화면을 터치해 다시 시도하세요.');}finally{busy=false;$('#start').disabled=false;}}
-$('#start').onclick=start;
+ }catch{status('센서를 시작하지 못했습니다. 화면을 터치해 다시 시도하세요.');}finally{busy=false;setActivationBusy(false);}}
+$('#start').onclick=()=>chooseGuidance(false);
+$('#start-reader').onclick=()=>chooseGuidance(true);
 // Begin sequential navigation at the artifact menu after the entry dialog closes.
 let enteredOnce=false;
 $('#activation').addEventListener('close',()=>{const target=enteredOnce?nav.querySelector('[aria-current="true"]'):nav.querySelector('button');enteredOnce=true;target?.focus({preventScroll:true});});
@@ -130,14 +133,14 @@ function placeMenuNote(){
  else menuRoot.append(menuNote);
 }
 function speakMenu(text,preview=false){
- if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
+ if(screenReaderMode||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
  window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);utterance.lang='ko-KR';utterance.rate=.95;
  if(preview)menuSpeech=utterance;
  window.speechSynthesis.speak(utterance);
 }
 menuRoot.addEventListener('click',async e=>{const button=e.target.closest('button');if(!button||!button.matches(previewControls)||button.disabled||!e.isTrusted)return;
  e.preventDefault();e.stopImmediatePropagation();
- if(pendingMenu===button){
+ if(screenReaderMode||pendingMenu===button){
   const extraDescriptions={'feel-exit':'유물을 다시 돌려보고 흔들 수 있습니다.','about':'유물 모델과 음원, 해설의 출처를 확인합니다.','close-info':'유물 화면으로 돌아갑니다.'};
   const description=extraDescriptions[button.id]||(button.dataset.index!==undefined?menuDescriptions[Number(button.dataset.index)]:'유물의 모양을 따라 살펴보고, 각 부분의 설명을 들어보세요.');
   clearMenuPreview();await button.onclick?.call(button,e);placeMenuNote();menuNote.hidden=false;menuNote.textContent=description;speakMenu(description);return;
@@ -158,7 +161,7 @@ $('#about').onclick=()=>{tactile?.end();$('#info').showModal();};$('#close-info'
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopSensors();audioContext?.suspend();if(frame)cancelAnimationFrame(frame);frame=0;}else{wake();if(!$('#activation').open)$('#activation').showModal();}});window.addEventListener('pagehide',()=>stopSensors());
 setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(1))));wake();
 
-if(renderer)tactile=setupTactile({renderer,camera,getRoot:()=>objects[selected],getIndex:()=>selected,
+if(renderer)tactile=setupTactile({renderer,camera,isScreenReader:()=>screenReaderMode,getRoot:()=>objects[selected],getIndex:()=>selected,
  freeze:()=>{clearTimeout(sensorTimer);status('');stopSound();motion.reset();drag=null;slide=null;swayX=swayY=swayTargetX=swayTargetY=0;
   objects.forEach((o,i)=>{o.visible=i===selected;});renderer.render(scene,camera);},
  restore:()=>{objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
