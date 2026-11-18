@@ -138,16 +138,16 @@ stage.addEventListener('keydown',e=>{if(tactile?.isActive())return;if(e.key==='A
 $('#top-nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;const buttons=[...$('#top-nav').querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+((e.key==='ArrowDown'||e.key==='ArrowRight')?1:-1)+buttons.length)%buttons.length;buttons[next].focus();});
 // First activation reads only the name; the next executes the control and reads its description.
 const menuRoot=$('#experience'),menuNote=document.createElement('p');
-menuNote.id='menu-description';menuNote.setAttribute('role','none');menuNote.setAttribute('aria-live','off');menuNote.hidden=true;$('#experience').append(menuNote);
+menuNote.id='menu-description';menuNote.setAttribute('role','none');menuNote.setAttribute('aria-live','off');menuNote.hidden=true;$('#top-nav').before(menuNote);
 new ResizeObserver(()=>{if(tactile?.isActive())return;const height=menuNote.parentElement===menuRoot&&!menuNote.hidden?menuNote.getBoundingClientRect().height:0;menuRoot.style.setProperty('--caption-height',Math.max(96,height)+'px');resize();}).observe(menuNote);
 const previewControls='#types button,#feel-entry,#feel-exit,#about,#close-info';
 let pendingMenu=null,menuSpeech=null;
 const menuDescriptions=['팔주령. 여덟 방향으로 뻗은 끝에 방울이 달린 유물입니다.','쌍두령. 길쭉한 몸체 양끝에 방울이 달린 유물입니다.','조합식쌍두령. 구부린 두 청동 막대가 교차하고 끝에 방울이 달린 유물입니다.','간두령. 길쭉한 방울과 벌어진 테두리가 있는 유물입니다.'];
-function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';menuRoot.append(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
+function clearMenuPreview(){pendingMenu?.removeAttribute('data-preview');pendingMenu=null;menuNote.hidden=true;menuNote.textContent='';$('#top-nav').before(menuNote);if(menuSpeech){window.speechSynthesis?.cancel();menuSpeech=null;}}
 function placeMenuNote(){
  if($('#info').open)$('#info-title').after(menuNote);
  else if(tactile?.isActive())$('#feel-exit').before(menuNote);
- else menuRoot.append(menuNote);
+ else $('#top-nav').before(menuNote);
 }
 function speakMenu(text,preview=false){
  if(screenReaderMode){announceReader(text);return;}
