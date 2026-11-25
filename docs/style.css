@@ -160,3 +160,35 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 
 #activation #start{background:#e5ebf5;color:#26488c;border-color:#7183a6;font-weight:600}
 #activation #start:disabled{background:#e5e7eb;color:#515d6d;border-color:#7a7e82}
+
+/* ── 작품 소개 · 만든 사람 · 사용법 안내 창 ── */
+#guide-open{position:absolute;top:max(12px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 54px);z-index:6;display:flex;align-items:center;gap:6px;height:44px;min-height:44px;padding:0 14px 0 10px;border:1px solid var(--line);border-radius:22px;background:var(--paper);color:var(--ink);font-size:1rem;font-weight:700}
+#guide-open span{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:.95rem}
+.feeling #guide-open{color:var(--night-text);background:var(--night);border-color:var(--night-muted)}
+.feeling #guide-open span{background:var(--gold);color:var(--night)}
+#sensor-note{right:190px}
+#guide-open[data-preview=true],#guide [data-preview=true],#activation #guide-open-first[data-preview=true]{outline:3px dashed var(--blue);outline-offset:3px}
+#activation .guide-link{display:block;width:100%;margin-top:14px;min-height:48px;padding:8px 12px;font-size:1rem;font-weight:600;color:var(--blue);text-decoration:underline;text-underline-offset:4px}
+#guide{max-width:640px;padding:0 0 18px;line-height:1.75}
+#guide .g-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:10px;padding:16px 20px 6px;background:var(--paper)}
+#guide h2{flex:1;margin:0;font-size:1.5rem}
+#guide h2:focus{outline:none}
+#guide-close,#guide-close2,#guide-listen{min-height:48px;padding:6px 18px;border:1px solid var(--line);border-radius:24px;font-size:1rem;font-weight:700;background:var(--paper)}
+#guide .g-sub{margin:0 20px 10px;color:var(--muted);font-size:.95rem}
+#guide .g-tabs{position:sticky;top:70px;z-index:1;display:flex;gap:6px;padding:4px 20px 10px;background:var(--paper);border-bottom:1px solid var(--line)}
+#guide .g-tabs button{flex:1 1 0;min-height:48px;padding:6px 4px;border:1px solid var(--line);border-radius:10px;font-size:1rem;font-weight:600;color:var(--muted);background:var(--paper)}
+#guide .g-tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:5px}
+#guide .g-panel{padding:6px 20px 0;font-size:1.125rem;color:var(--ink);word-break:keep-all}
+#guide .g-panel:focus{outline:none}
+#guide h3{margin:8px 0 6px;font-size:1.2rem;color:var(--blue)}
+#guide .g-panel p,#guide .g-panel li{font-size:1.125rem;margin:0 0 10px;border-radius:6px}
+#guide .g-team{list-style:none;padding:0;margin:0 0 10px;display:grid;gap:4px}
+#guide .g-team b{display:inline-block;min-width:4.2em;color:var(--ink)}
+#guide .g-steps{padding-left:1.4em;margin:0 0 6px}
+#guide .g-steps li{padding-left:.2em}
+#guide .g-steps b{color:var(--blue)}
+#guide .reading{background:#edcf8b66;box-shadow:-4px 0 0 var(--gold)}
+#guide .g-act{display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px 0}
+#guide #guide-listen{background:var(--blue);color:#fff;border-color:var(--blue)}
+@media(max-width:380px){#guide-open{padding:0 10px 0 8px;font-size:.9rem}#guide .g-tabs button{font-size:.92rem}}
+@media(max-height:520px){#guide .g-sub{display:none}#guide .g-head{position:static;padding-top:10px}#guide .g-tabs{position:static;padding-bottom:8px}#guide .g-panel{font-size:1rem}#guide .g-panel p,#guide .g-panel li{font-size:1.05rem}}
