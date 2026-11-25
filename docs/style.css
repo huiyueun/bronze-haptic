@@ -198,3 +198,10 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 /* Give tactile exploration its own large artifact area above the explanation. */
 .feeling #stage{inset:64px 8px calc(min(32svh,240px) + 100px + env(safe-area-inset-bottom))}.feeling #feel-status{max-height:min(32svh,240px)}
 @media(max-height:480px) and (min-width:600px){.feeling #stage{inset:12px 42% 16px 8px}.feeling #feel-panel{left:60%;right:12px}.feeling #feel-status{max-height:calc(100svh - 110px)}}
+
+/* Prioritize the artifact while keeping captions readable on phones. */
+#experience{--caption-height:56px}
+#experience > #menu-description,#feel-status,#feel-panel #menu-description{font-size:1.125rem;line-height:1.5;padding:8px 12px}
+.feeling #stage{inset:64px 0 calc(min(25svh,190px) + 90px + env(safe-area-inset-bottom))}
+.feeling #feel-status{max-height:min(25svh,190px)}
+@media(max-height:480px) and (min-width:600px){.feeling #stage{inset:12px 42% 16px 8px}.feeling #feel-status{max-height:calc(100svh - 110px)}}
