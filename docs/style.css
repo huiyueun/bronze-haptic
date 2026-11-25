@@ -192,3 +192,5 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 #guide #guide-listen{background:var(--blue);color:#fff;border-color:var(--blue)}
 @media(max-width:380px){#guide-open{padding:0 10px 0 8px;font-size:.9rem}#guide .g-tabs button{font-size:.92rem}}
 @media(max-height:520px){#guide .g-sub{display:none}#guide .g-head{position:static;padding-top:10px}#guide .g-tabs{position:static;padding-bottom:8px}#guide .g-panel{font-size:1rem}#guide .g-panel p,#guide .g-panel li{font-size:1.05rem}}
+
+#guide-video{display:block;width:100%;max-width:340px;height:auto;max-height:58vh;margin:12px auto;object-fit:contain;background:#111b2a;border-radius:10px}#guide .g-act [hidden]{display:none}#guide .g-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:420px){#guide .g-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
