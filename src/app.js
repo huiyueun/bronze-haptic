@@ -182,7 +182,7 @@ setup3D();select(Math.max(0,TYPES.findIndex(type=>type.id===location.hash.slice(
 if(renderer)tactile=setupTactile({renderer,camera,isScreenReader:()=>screenReaderMode,announceReader:text=>{clearMenuPreview();announceReader(text);},getRoot:()=>objects[selected],getIndex:()=>selected,
  freeze:()=>{clearTimeout(sensorTimer);status('');stopSound();motion.reset();drag=null;slide=null;swayX=swayY=swayTargetX=swayTargetY=0;
   objects.forEach((o,i)=>{o.visible=i===selected;});renderer.render(scene,camera);},
- restore:()=>{objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
+ restore:()=>{resize();objects[selected].position.x=0;motion.reset();swayX=swayY=swayTargetX=swayTargetY=0;wake();}
 });
 
 
