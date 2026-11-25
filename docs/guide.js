@@ -15,7 +15,7 @@
    try{const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=.95;let done=false;const f=()=>{if(done||my!==gen)return;done=true;setTimeout(next,200);};u.onend=f;u.onerror=f;speechSynthesis.speak(u);setTimeout(f,2500+t.length*220);}catch(e){next();}})();}
  function showTab(name,read){stopReading();$('#guide-video').pause();tab=name;$('#guide-listen').hidden=name==='video';dlg.querySelectorAll('[role=tab]').forEach(b=>{const on=b.dataset.tab===name;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
   dlg.querySelectorAll('.g-panel').forEach(p=>{p.hidden=p.id!=='gp-'+name;});dlg.scrollTop=0;if(read)readPanel();}
- function open(from){opener=from||document.activeElement;stopReading();showTab(tab,false);if(!dlg.open)dlg.showModal();setTimeout(()=>{try{$('#guide-title').focus({preventScroll:true});}catch(e){}},30);
+ function open(from,name){if(name)tab=name;opener=from||document.activeElement;stopReading();showTab(tab,false);if(!dlg.open)dlg.showModal();setTimeout(()=>{try{$('#guide-title').focus({preventScroll:true});}catch(e){}},30);
   if(!isSR())say('작품 소개와 사용법 창입니다. 위쪽에 작품 소개, 작품 영상, 만든 사람, 사용법 단추가 있습니다.',()=>{if(dlg.open)readPanel();});}
  function close(){stopReading();if(dlg.open)dlg.close();}
  dlg.addEventListener('close',()=>{$('#guide-video').pause();stopReading();clearPending();try{opener&&opener.focus({preventScroll:true});}catch(e){}});
@@ -25,7 +25,7 @@
   if(pending===btn){clearPending();action(btn);return;}
   clearPending();stopReading();pending=btn;btn.setAttribute('data-preview','true');say((btn.dataset.say||btn.textContent.trim())+'. 한 번 더 누르면 실행합니다.');pendingTimer=setTimeout(clearPending,4000);});}
  twoTap($('#guide-open'),b=>open(b));
- const first=$('#guide-open-first');if(first)twoTap(first,b=>open(b));
+ document.querySelectorAll('[data-guide-tab]').forEach(b=>twoTap(b,x=>open(x,x.dataset.guideTab)));
  twoTap($('#guide-close'),close);twoTap($('#guide-close2'),close);
  twoTap($('#guide-listen'),()=>readPanel());
  dlg.querySelectorAll('[role=tab]').forEach(b=>twoTap(b,x=>{showTab(x.dataset.tab,true);x.focus({preventScroll:true});}));

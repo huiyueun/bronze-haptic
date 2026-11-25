@@ -205,3 +205,12 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 .feeling #stage{inset:64px 0 calc(min(25svh,190px) + 90px + env(safe-area-inset-bottom))}
 .feeling #feel-status{max-height:min(25svh,190px)}
 @media(max-height:480px) and (min-width:600px){.feeling #stage{inset:12px 42% 16px 8px}.feeling #feel-status{max-height:calc(100svh - 110px)}}
+
+/* The first dialog doubles as the work's cover. */
+#activation h2{font-size:2rem;line-height:1.35;margin:0 0 18px}
+#activation #activation-intro,#activation #activation-shake{font-size:1rem;line-height:1.65;color:var(--ink);word-break:keep-all}
+#activation #activation-intro{margin:0 0 8px}
+#activation #activation-shake{margin:0 0 24px}
+#activation .cover-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:18px}
+#activation .cover-links .guide-link{margin:0;padding:8px 2px;min-height:48px;font-size:.9375rem}
+@media(max-height:560px){#activation{padding-top:20px;padding-bottom:16px}#activation h2{margin-bottom:10px}#activation #activation-shake{margin-bottom:14px}}
